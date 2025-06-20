@@ -204,19 +204,19 @@ async function extractStreamUrl(url) {
             let subtitles = '';
 
             let subtitleTrack = subtitleTrackData.find(track =>
-                track.display.includes('English') && (track.encoding === 'ASCII' || track.encoding === 'UTF-8')
+                track.display.includes('Italian') && (track.encoding === 'ASCII' || track.encoding === 'UTF-8')
             );
 
             if (!subtitleTrack) {
-                subtitleTrack = subtitleTrackData.find(track => track.display.includes('English') && (track.encoding === 'CP1252'));
+                subtitleTrack = subtitleTrackData.find(track => track.display.includes('Italian') && (track.encoding === 'CP1252'));
             }
 
             if (!subtitleTrack) {
-                subtitleTrack = subtitleTrackData.find(track => track.display.includes('English') && (track.encoding === 'CP1250'));
+                subtitleTrack = subtitleTrackData.find(track => track.display.includes('Italian') && (track.encoding === 'CP1250'));
             }
     
             if (!subtitleTrack) {
-                subtitleTrack = subtitleTrackData.find(track => track.display.includes('English') && (track.encoding === 'CP850'));
+                subtitleTrack = subtitleTrackData.find(track => track.display.includes('Italian') && (track.encoding === 'CP850'));
             }
 
             subtitles = subtitleTrack ? subtitleTrack.url : '';
@@ -258,9 +258,9 @@ async function extractStreamUrl(url) {
                     const expires = expiresMatch[1];
 
                     if (baseUrl.includes('?b=1')) {
-                        stream = `${baseUrl}&token=${token}&expires=${expires}&h=1&lang=en`;
+                        stream = `${baseUrl}&token=${token}&expires=${expires}&h=1&lang=it`;
                     } else {
-                        stream = `${baseUrl}?token=${token}&expires=${expires}&h=1&lang=en`;
+                        stream = `${baseUrl}?token=${token}&expires=${expires}&h=1&lang=it`;
                     }
                 }
             }
@@ -299,19 +299,19 @@ async function extractStreamUrl(url) {
             let subtitles = '';
 
             let subtitleTrack = subtitleTrackData.find(track =>
-                track.display.includes('English') && (track.encoding === 'ASCII' || track.encoding === 'UTF-8')
+                track.display.includes('Italian') && (track.encoding === 'ASCII' || track.encoding === 'UTF-8')
             );
 
             if (!subtitleTrack) {
-                subtitleTrack = subtitleTrackData.find(track => track.display.includes('English') && (track.encoding === 'CP1252'));
+                subtitleTrack = subtitleTrackData.find(track => track.display.includes('Italian') && (track.encoding === 'CP1252'));
             }
 
             if (!subtitleTrack) {
-                subtitleTrack = subtitleTrackData.find(track => track.display.includes('English') && (track.encoding === 'CP1250'));
+                subtitleTrack = subtitleTrackData.find(track => track.display.includes('Italian') && (track.encoding === 'CP1250'));
             }
     
             if (!subtitleTrack) {
-                subtitleTrack = subtitleTrackData.find(track => track.display.includes('English') && (track.encoding === 'CP850'));
+                subtitleTrack = subtitleTrackData.find(track => track.display.includes('Italian') && (track.encoding === 'CP850'));
             }
 
             subtitles = subtitleTrack ? subtitleTrack.url : '';
