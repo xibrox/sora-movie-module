@@ -437,7 +437,7 @@ async function extractEpisodes(url) {
 // extractStreamUrl("anime/130003/1");
 
 async function extractStreamUrl(url) {
-    // if (!_0xCheck()) return 'https://files.catbox.moe/avolvc.mp4';
+    if (!_0xCheck()) return 'https://files.catbox.moe/avolvc.mp4';
 
     try {
         const match = url.match(/(movie|tv|anime)\/(.+)/);
