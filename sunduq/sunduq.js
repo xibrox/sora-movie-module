@@ -269,12 +269,6 @@ async function searchResults(keyword) {
                             image: result.poster_path ? `https://image.tmdb.org/t/p/w500${result.poster_path}` : "",
                             href: `tv/${result.id}/1/1`
                         };
-                    } else {
-                        return {
-                            title: result.title || result.name || result.original_name || result.original_title || "Untitled",
-                            image: result.poster_path ? `https://image.tmdb.org/t/p/w500${result.poster_path}` : "",
-                            href: `tv/${result.id}/1/1`
-                        };
                     }
                 })
             );
@@ -366,7 +360,7 @@ async function extractEpisodes(url) {
             const movieId = match[1];
             
             const movie = [
-                { href: `movie/${movieId}|${anilistId}`, number: 1, title: "Full Movie" }
+                { href: `movie/${movieId}`, number: 1, title: "Full Movie" }
             ];
 
             console.log(movie);
@@ -392,7 +386,7 @@ async function extractEpisodes(url) {
                 
                 if (seasonData.episodes && seasonData.episodes.length) {
                     const episodes = seasonData.episodes.map(episode => ({
-                        href: `tv/${showId}/${seasonNumber}/${episode.episode_number}|${anilistId}/${episode.episode_number}`,
+                        href: `tv/${showId}/${seasonNumber}/${episode.episode_number}`,
                         number: episode.episode_number,
                         title: episode.name || ""
                     }));
@@ -434,12 +428,16 @@ async function extractEpisodes(url) {
 }
 
 // searchResults("clannad");
+// extractDetails("tv/24835/1/1");
+// extractEpisodes("tv/24835/1/1");
+// extractStreamUrl("tv/24835/1/1");
+
 // extractDetails("anime/2167");
 // extractEpisodes("anime/2167");
 // extractStreamUrl("anime/130003/1");
 
 async function extractStreamUrl(url) {
-    if (!_0xCheck()) return 'https://files.catbox.moe/avolvc.mp4';
+    // if (!_0xCheck()) return 'https://files.catbox.moe/avolvc.mp4';
 
     try {
         const match = url.match(/(movie|tv|anime)\/(.+)/);
