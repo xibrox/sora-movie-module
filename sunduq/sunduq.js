@@ -865,7 +865,7 @@ async function extractStreamUrl(url) {
                 if (type === 'anime') {
                     const [anilistId, episodeNumber] = path.split('/');
                 
-                    const hosts = ['hd-1', 'hd-2', 'hd-3', 'miko', 'zaza', 'shiro', 'animez'];
+                    const hosts = ['animez', 'zaza', 'miko', 'hd-1', 'hd-2', 'hd-3', 'shiro'];
                     const types = ['sub', 'dub'];
 
                     const headers = {
@@ -903,8 +903,6 @@ async function extractStreamUrl(url) {
                                             subs = data.subtitles;
                                         }
 
-                                        console.log("DEBUG subtitles found:", subs);
-
                                         // Find the first English .vtt that is not a thumbnail
                                         const found = subs.find(s =>
                                             typeof (s.url || s.file) === "string" &&
@@ -915,13 +913,10 @@ async function extractStreamUrl(url) {
 
                                         if (found) {
                                             subtitleUrls = found.url || found.file;
-                                            // return {
-                                            //     lang: found.lang || found.label || "English",
-                                            //     url: found.url || found.file
-                                            // };
                                         }
 
                                         const streamUrl = host === 'miko' ? data.sources.url
+                                            : host === "animez" ? data.sources.url
                                             : `https://proxy-2.madaraverse.online/proxy?url=${encodeURIComponent(data.sources.url)}`;
 
                                         return {
