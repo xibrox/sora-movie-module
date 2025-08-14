@@ -404,9 +404,11 @@ async function extractEpisodes(url) {
             const aniData = await Anilist.lookup({ id: animeId });
             const anime = aniData.Page.media[0];
 
+            console.log(anime);
+
             if (!anime) return JSON.stringify([]);
 
-            const episodesCount = anime.episodes || 1;
+            const episodesCount = anime.episodes || (anime.nextAiringEpisode.episode - 1) || 1;
             const episodesArray = [];
             for (let i = 1; i <= episodesCount; i++) {
                 episodesArray.push({
@@ -435,6 +437,9 @@ async function extractEpisodes(url) {
 // extractDetails("anime/2167");
 // extractEpisodes("anime/2167");
 // extractStreamUrl("anime/130003/1");
+
+// searchResults("One piece");
+// extractEpisodes("anime/21");
 
 async function extractStreamUrl(url) {
     if (!_0xCheck()) return 'https://files.catbox.moe/avolvc.mp4';
