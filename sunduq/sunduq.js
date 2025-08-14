@@ -1,112 +1,298 @@
-// async function searchResults(keyword) {
-//     try {
-//         const encodedKeyword = encodeURIComponent(keyword);
-//         const responseText = await soraFetch(`https://api.themoviedb.org/3/search/multi?api_key=9801b6b0548ad57581d111ea690c85c8&query=${encodedKeyword}&include_adult=false`);
-//         const data = await responseText.json();
+class Anilist {
+    static async search(keyword, filters = {}) {
+        const query = `query (
+                $search: String,
+                $page: Int,
+                $perPage: Int,
+                $sort: [MediaSort],
+                $genre_in: [String],
+                $tag_in: [String],
+                $type: MediaType,
+                $format: MediaFormat,
+                $status: MediaStatus,
+                $countryOfOrigin: CountryCode,
+                $isAdult: Boolean,
+                $season: MediaSeason,
+                $startDate_like: String,
+                $source: MediaSource,
+                $averageScore_greater: Int,
+                $averageScore_lesser: Int
+            ) {
+                Page(page: $page, perPage: $perPage) {
+                media(
+                    search: $search,
+                    type: $type,
+                    sort: $sort,
+                    genre_in: $genre_in,
+                    tag_in: $tag_in,
+                    format: $format,
+                    status: $status,
+                    countryOfOrigin: $countryOfOrigin,
+                    isAdult: $isAdult,
+                    season: $season,
+                    startDate_like: $startDate_like,
+                    source: $source,
+                    averageScore_greater: $averageScore_greater,
+                    averageScore_lesser: $averageScore_lesser
+                ) {
+                    id
+                    idMal
+                    averageScore
+                    title {
+                        romaji
+                        english
+                        native
+                    }
+                    episodes
+                    nextAiringEpisode {
+                        airingAt
+                        timeUntilAiring
+                        episode
+                    }
+                    status
+                    genres
+                    format
+                    description
+                    startDate {
+                        year
+                        month
+                        day
+                    }
+                    endDate {
+                        year
+                        month
+                        day
+                    }
+                    popularity
+                    coverImage {
+                        color
+                        large
+                        extraLarge
+                    }
+                }
+            }
+        }`;
 
-//         const transformedResults = data.results.map(result => {
-//             if(result.media_type === "movie" || result.title) {
-//                 return {
-//                     title: result.title || result.name || result.original_title || result.original_name,
-//                     image: `https://image.tmdb.org/t/p/w500${result.poster_path}`,
-//                     href: `movie/${result.id}`
-//                 };
-//             } else if(result.media_type === "tv" || result.name) {
-//                 return {
-//                     title: result.name || result.title || result.original_name || result.original_title,
-//                     image: `https://image.tmdb.org/t/p/w500${result.poster_path}`,
-//                     href: `tv/${result.id}/1/1`
-//                 };
-//             } else {
-//                 return {
-//                     title: result.title || result.name || result.original_name || result.original_title || "Untitled",
-//                     image: `https://image.tmdb.org/t/p/w500${result.poster_path}`,
-//                     href: `tv/${result.id}/1/1`
-//                 };
-//             }
-//         });
+        const variables = {
+            "page": 1,
+            "perPage": 50,
+            "sort": [
+                "SEARCH_MATCH",
+                "TITLE_ENGLISH_DESC",
+                "TITLE_ROMAJI_DESC"
+            ],
+            "search": keyword,
+            "type": "ANIME",
+            ...filters
+        }
 
-//         console.log('Transformed Results: ' + transformedResults);
-//         return JSON.stringify(transformedResults);
-//     } catch (error) {
-//         console.log('Fetch error in searchResults:' + error);
-//         return JSON.stringify([{ title: 'Error', image: '', href: '' }]);
-//     }
-// }
+        // console.log(filters, variables);
+
+        return Anilist.anilistFetch(query, variables);
+    }
+
+    static async lookup(filters) {
+        const query = `query (
+                $id: Int,
+                $idMal: Int
+            ) {
+                Page(page: 1, perPage: 1) {
+                media(
+                    id: $id,
+                    idMal: $idMal
+                ) {
+                    id
+                    idMal
+                    averageScore
+                    title {
+                        romaji
+                        english
+                        native
+                    }
+                    episodes
+                    nextAiringEpisode {
+                        airingAt
+                        timeUntilAiring
+                        episode
+                    }
+                    status
+                    genres
+                    format
+                    description
+                    startDate {
+                        year
+                        month
+                        day
+                    }
+                    endDate {
+                        year
+                        month
+                        day
+                    }
+                    popularity
+                    coverImage {
+                        color
+                        large
+                        extraLarge
+                    }
+                }
+            }
+        }`;
+
+        const variables = {
+            "type": "ANIME",
+            ...filters
+        }
+
+        return Anilist.anilistFetch(query, variables);
+    }
+
+    static async getLatest() {
+
+    }
+
+    static async anilistFetch(query, variables) {
+        const url = 'https://graphql.anilist.co/';
+        const extraTimeoutMs = 250;
+
+        try {
+            const response = await soraFetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                },
+                body: JSON.stringify({
+                    query: query,
+                    variables: variables
+                })
+            });
+
+            if (response.status !== 200) {
+                if (response.status === 429) {
+                    console.info('=== RATE LIMIT EXCEEDED, SLEEPING AND RETRYING ===');
+                    const retryTimeout = response.headers.get('Retry-After');
+                    const timeout = Math.ceil((parseInt(retryTimeout))) * 1000 + extraTimeoutMs;
+                    await sleep(timeout);
+                    return await AnilistFetch(query, variables);
+
+                }
+
+                console.error('Error fetching Anilist data:', response.statusText);
+                return null;
+            }
+
+            const json = await response.json();
+            if (json?.errors) {
+                console.error('Error fetching Anilist data:', json.errors);
+            }
+
+            return json?.data;
+
+        } catch (error) {
+            console.error('Error fetching Anilist data:', error);
+            return null;
+        }
+    }
+
+    static convertAnilistDateToDateStr(dateObject) {
+        if (dateObject.year == null) {
+            return null;
+        }
+        if (dateObject.month == null || parseInt(dateObject.month) < 1) {
+            dateObject.month = 1;
+        }
+        if (dateObject.day == null || parseInt(dateObject.day) < 1) {
+            dateObject.day = 1;
+        }
+        return dateObject.year + "-" + (dateObject.month).toString().padStart(2, '0') + "-" + (dateObject.day).toString().padStart(2, '0');
+    }
+
+
+    // Yes it's stupid, but I kinda love it which is why I'm not optimizing this
+    static nextAnilistAirDateToCountdown(timestamp) {
+        if (timestamp == null) return null;
+
+        const airDate = new Date((timestamp * 1000));
+        const now = new Date();
+
+        if (now > airDate) return null;
+
+        let [days, hourRemainder] = (((airDate - now) / 1000) / 60 / 60 / 24).toString().split('.');
+        let [hours, minRemainder] = (parseFloat("0." + hourRemainder) * 24).toString().split('.');
+        let minutes = Math.ceil((parseFloat("0." + minRemainder) * 60));
+
+        return `Next episode will air in ${days} days, ${hours} hours and ${minutes} minutes at ${airDate.getFullYear()}-${(airDate.getMonth() + 1).toString().padStart(2, '0')}-${(airDate.getDate()).toString().padStart(2, '0')} ${airDate.getHours()}:${airDate.getMinutes()}`;
+    }
+}
+
+function sleep(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 async function searchResults(keyword) {
     try {
         const encodedKeyword = encodeURIComponent(keyword);
 
-        // Fetch AniList & TMDB in parallel
-        const [aniRes, tmdbRes] = await Promise.all([
-            soraFetch(`https://sudatchi-api.vercel.app/api/search?q=${encodedKeyword}`).then(r => r.json()),
-            soraFetch(`https://api.themoviedb.org/3/search/multi?api_key=9801b6b0548ad57581d111ea690c85c8&query=${encodedKeyword}&include_adult=false`).then(r => r.json())
-        ]);
+        // Fetch AniList results first
+        const aniData = await Anilist.search(keyword);
 
-        // Transform AniList results
-        const aniListResults = aniRes.media.map(result => ({
-            id: result.id, // AniList ID
-            title: result.title.english || result.title.romaji || result.title.native,
-            image: result.coverImage.large || result.coverImage.extraLarge || result.coverImage.medium,
-            type: "anime"
-        }));
+        let transformedResults = [];
 
-        // Transform TMDB results
-        const tmdbResults = tmdbRes.results.map(result => ({
-            id: result.id, // TMDB ID
-            title: result.title || result.name || result.original_title || result.original_name || "Untitled",
-            image: result.poster_path ? `https://image.tmdb.org/t/p/w500${result.poster_path}` : "",
-            type: result.media_type
-        }));
+        if (aniData && aniData.Page && aniData.Page.media && aniData.Page.media.length > 0) {
+            transformedResults = aniData.Page.media.map(result => {
+                return {
+                    title: result.title.english || result.title.romaji || result.title.native || "Untitled",
+                    image: result.coverImage.extraLarge || result.coverImage.large || result.coverImage.medium || "",
+                    href: `anime/${result.id}`
+                };
+            });
+        }
 
-        // Helper: normalize title
-        const normalize = str => str.toLowerCase().replace(/[^a-z0-9]+/g, "");
+        // Fetch TMDB results after AniList
+        const data = await soraFetch(
+            `https://api.themoviedb.org/3/search/multi?api_key=9801b6b0548ad57581d111ea690c85c8&query=${encodedKeyword}&include_adult=false`
+        ).then(r => r.json());
 
-        // Match and merge results
-        const matchedResults = tmdbResults.map(tmdbItem => {
-            const match = aniListResults.find(ani => normalize(ani.title) === normalize(tmdbItem.title));
-            const anilistId = match ? match.id : "";
-            let href;
-            
-            if (tmdbItem.type === "movie") {
-                href = `movie/${tmdbItem.id}${anilistId ? `|${anilistId}` : "noAnilistId"}`;
-            } else if (tmdbItem.type === "tv") {
-                href = `tv/${tmdbItem.id}/1/1${anilistId ? `|${anilistId}` : "noAnilistId"}`;
-            }
+        if (data && data.results && data.results.length > 0) {
+            transformedResults = transformedResults.concat(
+                data.results.map(result => {
+                    if (result.media_type === "movie" || result.title) {
+                        return {
+                            title: result.title || result.name || result.original_title || result.original_name || "Untitled",
+                            image: result.poster_path ? `https://image.tmdb.org/t/p/w500${result.poster_path}` : "",
+                            href: `movie/${result.id}`
+                        };
+                    } else if (result.media_type === "tv" || result.name) {
+                        return {
+                            title: result.name || result.title || result.original_name || result.original_title || "Untitled",
+                            image: result.poster_path ? `https://image.tmdb.org/t/p/w500${result.poster_path}` : "",
+                            href: `tv/${result.id}/1/1`
+                        };
+                    } else {
+                        return {
+                            title: result.title || result.name || result.original_name || result.original_title || "Untitled",
+                            image: result.poster_path ? `https://image.tmdb.org/t/p/w500${result.poster_path}` : "",
+                            href: `tv/${result.id}/1/1`
+                        };
+                    }
+                })
+            );
+        }
 
-            return {
-                title: tmdbItem.title,
-                image: tmdbItem.image,
-                href
-            };
-        });
-
-        console.log("Matched Results:", matchedResults);
-        return JSON.stringify(matchedResults);
+        console.log('Transformed Results: ' + JSON.stringify(transformedResults));
+        return JSON.stringify(transformedResults);
 
     } catch (error) {
-        console.error("Fetch error in searchResults:", error);
-        return JSON.stringify([{ title: "Error", image: "", href: "" }]);
+        console.log('Fetch error in searchResults: ' + error);
+        return JSON.stringify([{ title: 'Error', image: '', href: '' }]);
     }
 }
 
-// searchResults('one piece');
-// extractDetails("tv/37854/1/1|21");
-// extractEpisodes("tv/37854/1/1|21");
-// extractStreamUrl("tv/37854/1/2|21/2");
-
-// searchResults("clannad");
-// extractDetails("tv/24835/1/1|2167");
-// extractEpisodes("tv/24835/1/1|2167");
-extractStreamUrl("tv/24835/1/1|2167/1");
-
 async function extractDetails(url) {
-    const [href, anilistId] = url.split("|");
-
     try {
-        if(href.includes('movie')) {
-            const match = href.match(/movie\/([^\/]+)/);
+        if(url.includes('movie')) {
+            const match = url.match(/movie\/([^\/]+)/);
             if (!match) throw new Error("Invalid URL format");
 
             const movieId = match[1];
@@ -120,8 +306,8 @@ async function extractDetails(url) {
             }];
 
             return JSON.stringify(transformedResults);
-        } else if(href.includes('tv')) {
-            const match = href.match(/tv\/([^\/]+)/);
+        } else if(url.includes('tv')) {
+            const match = url.match(/tv\/([^\/]+)/);
             if (!match) throw new Error("Invalid URL format");
 
             const showId = match[1];
@@ -132,6 +318,27 @@ async function extractDetails(url) {
                 description: data.overview || 'No description available',
                 aliases: `Duration: ${data.episode_run_time && data.episode_run_time.length ? data.episode_run_time.join(', ') + " minutes" : 'Unknown'}`,
                 airdate: `Aired: ${data.first_air_date ? data.first_air_date : 'Unknown'}`
+            }];
+
+            console.log(JSON.stringify(transformedResults));
+            return JSON.stringify(transformedResults);
+        } else if (url.includes('anime')) {
+            const match = url.match(/anime\/([^\/]+)/);
+            if (!match) throw new Error("Invalid URL format");
+
+            const animeId = parseInt(match[1]);
+
+            const aniData = await Anilist.lookup({ id: animeId });
+            const anime = aniData.Page.media[0];
+
+            const cleanDescription = anime.description
+                ? anime.description.replace(/<[^>]+>/g, '').trim()
+                : 'No description available';
+
+            const transformedResults = [{
+                description: cleanDescription,
+                aliases: `Duration: ${anime.episodes ? 24 + " minutes" : 'Unknown'}`, // default 24 mins per episode
+                airdate: `Aired: ${anime.startDate.year ? Anilist.convertAnilistDateToDateStr(anime.startDate) : 'Unknown'}`
             }];
 
             console.log(JSON.stringify(transformedResults));
@@ -150,11 +357,9 @@ async function extractDetails(url) {
 }
 
 async function extractEpisodes(url) {
-    const [href, anilistId] = url.split("|");
-
     try {
-        if(href.includes('movie')) {
-            const match = href.match(/movie\/([^\/]+)/);
+        if(url.includes('movie')) {
+            const match = url.match(/movie\/([^\/]+)/);
             
             if (!match) throw new Error("Invalid URL format");
             
@@ -166,8 +371,8 @@ async function extractEpisodes(url) {
 
             console.log(movie);
             return JSON.stringify(movie);
-        } else if(href.includes('tv')) {
-            const match = href.match(/tv\/([^\/]+)\/([^\/]+)\/([^\/]+)/);
+        } else if(url.includes('tv')) {
+            const match = url.match(/tv\/([^\/]+)\/([^\/]+)\/([^\/]+)/);
             
             if (!match) throw new Error("Invalid URL format");
             
@@ -197,6 +402,28 @@ async function extractEpisodes(url) {
             
             console.log(allEpisodes);
             return JSON.stringify(allEpisodes);
+        } else if(url.includes('anime')) {
+            const match = url.match(/anime\/([^\/]+)/);
+            if (!match) throw new Error("Invalid URL format");
+
+            const animeId = parseInt(match[1]);
+            const aniData = await Anilist.lookup({ id: animeId });
+            const anime = aniData.Page.media[0];
+
+            if (!anime) return JSON.stringify([]);
+
+            const episodesCount = anime.episodes || 1;
+            const episodesArray = [];
+            for (let i = 1; i <= episodesCount; i++) {
+                episodesArray.push({
+                    href: `anime/${animeId}/${i}`,
+                    number: i,
+                    title: `Episode ${i}`
+                });
+            }
+
+            console.log(episodesArray);
+            return JSON.stringify(episodesArray);
         } else {
             throw new Error("Invalid URL format");
         }
@@ -206,17 +433,16 @@ async function extractEpisodes(url) {
     }    
 }
 
-// extractStreamUrl(`tv/1396/1/1`);
-// extractStreamUrl(`tv/119051/1/2`);
-// extractStreamUrl(`movie/238`);
+// searchResults("clannad");
+// extractDetails("anime/2167");
+// extractEpisodes("anime/2167");
+// extractStreamUrl("anime/130003/1");
 
 async function extractStreamUrl(url) {
-    // if (!_0xCheck()) return 'https://files.catbox.moe/avolvc.mp4';
-
-    const [href, anilistHref] = url.split("|");
+    if (!_0xCheck()) return 'https://files.catbox.moe/avolvc.mp4';
 
     try {
-        const match = href.match(/(movie|tv)\/(.+)/);
+        const match = url.match(/(movie|tv|anime)\/(.+)/);
         if (!match) throw new Error('Invalid URL format');
         const [, type, path] = match;
 
@@ -227,12 +453,16 @@ async function extractStreamUrl(url) {
         const fetchVidzee = async () => {
             const vidzeePromises = Array.from({ length: 5 }, (_, i) => {
                 const sr = i + 1;
-                const apiUrl = type === 'movie'
-                    ? `https://player.vidzee.wtf/api/server?id=${path}&sr=${sr}`
-                    : (() => {
-                        const [showId, seasonNumber, episodeNumber] = path.split('/');
-                        return `https://player.vidzee.wtf/api/server?id=${showId}&sr=${sr}&ss=${seasonNumber}&ep=${episodeNumber}`;
-                    })();
+                let apiUrl;
+
+                if (type === 'movie') {
+                    apiUrl = `https://player.vidzee.wtf/api/server?id=${path}&sr=${sr}`;
+                } else if (type === 'tv') {
+                    const [showId, seasonNumber, episodeNumber] = path.split('/');
+                    apiUrl = `https://player.vidzee.wtf/api/server?id=${showId}&sr=${sr}&ss=${seasonNumber}&ep=${episodeNumber}`;
+                } else {
+                    return null;
+                }
 
                 return soraFetch(apiUrl)
                     .then(res => res.json())
@@ -396,12 +626,17 @@ async function extractStreamUrl(url) {
         // --- VixSrc fetch ---
         const fetchVixSrc = async () => {
             try {
-                const vixsrcUrl = type === 'movie'
-                    ? `https://vixsrc.to/movie/${path}`
-                    : (() => {
-                        const [showId, seasonNumber, episodeNumber] = path.split('/');
-                        return `https://vixsrc.to/tv/${showId}/${seasonNumber}/${episodeNumber}`;
-                    })();
+                let vixsrcUrl;
+
+                if (type === 'movie') {
+                    vixsrcUrl = `https://vixsrc.to/movie/${path}`;
+                } else if (type === 'tv') {
+                    const [showId, seasonNumber, episodeNumber] = path.split('/');
+                    vixsrcUrl = `https://vixsrc.to/tv/${showId}/${seasonNumber}/${episodeNumber}`;
+                } else {
+                    return null;
+                }
+
                 const html = await soraFetch(vixsrcUrl).then(res => res.text());
 
                 let vixStreams = [];
@@ -477,12 +712,16 @@ async function extractStreamUrl(url) {
         // --- Vidapi fetch ---
         const fetchVidapi = async () => {
             try {
-                const vidapiUrl = type === 'movie'
-                    ? `https://vidapi.xyz/embed/movie/${path}`
-                    : (() => {
-                        const [showId, seasonNumber, episodeNumber] = path.split('/');
-                        return `https://vidapi.xyz/embed/tv/${showId}&s=${seasonNumber}&e=${episodeNumber}`;
-                    })();
+                let vidapiUrl;
+
+                if (type === 'movie') {
+                    vidapiUrl = `https://vidapi.xyz/embed/movie/${path}`
+                } else if (type === 'tv') {
+                    const [showId, seasonNumber, episodeNumber] = path.split('/');
+                    vidapiUrl = `https://vidapi.xyz/embed/tv/${showId}&s=${seasonNumber}&e=${episodeNumber}`;
+                } else {
+                    return null;
+                }
 
                 const headers = { 'Referer': 'https://vidapi.xyz/' };
                 const html = await soraFetch(vidapiUrl, { headers }).then(res => res.text());
@@ -542,12 +781,16 @@ async function extractStreamUrl(url) {
         // --- RgShows fetch ---
         const fetchRgShows = async () => {
             try {
-                const rgShowsUrl = type === 'movie'
-                    ? `https://api.rgshows.me/main/movie/${path}`
-                    : (() => {
-                        const [showId, seasonNumber, episodeNumber] = path.split('/');
-                        return `https://api.rgshows.me/main/tv/${showId}/${seasonNumber}/${episodeNumber}`;
-                    })();
+                let rgShowsUrl;
+
+                if (type === 'movie') {
+                    rgShowsUrl = `https://api.rgshows.me/main/movie/${path}`
+                } else if (type === 'tv') {
+                    const [showId, seasonNumber, episodeNumber] = path.split('/');
+                    rgShowsUrl = `https://api.rgshows.me/main/tv/${showId}/${seasonNumber}/${episodeNumber}`;
+                } else {
+                    return null;
+                }
 
                 const headers = {
                     'Origin': 'https://www.vidsrc.wtf',
@@ -574,12 +817,16 @@ async function extractStreamUrl(url) {
         // --- Movies and TV shows ---
         const fetchVidnest = async () => {
             try {
-                const vidnestUrl = type === 'movie'
-                    ? `https://embed.madaraverse.online/hollymoviehd/movie/${path}`
-                    : (() => {
-                        const [showId, seasonNumber, episodeNumber] = path.split('/');
-                        return `https://embed.madaraverse.online/hollymoviehd/tv/${showId}/${seasonNumber}/${episodeNumber}`;
-                    })();
+                let vidnestUrl;
+
+                if (type === 'movie') {
+                    vidnestUrl = `https://embed.madaraverse.online/hollymoviehd/movie/${path}`
+                } else if (type === 'tv') {
+                    const [showId, seasonNumber, episodeNumber] = path.split('/');
+                    vidnestUrl = `https://embed.madaraverse.online/hollymoviehd/tv/${showId}/${seasonNumber}/${episodeNumber}`;
+                } else {
+                    return null;
+                }
 
                 const headers = {
                     'Referer': 'https://vidnest.fun/',
@@ -615,44 +862,29 @@ async function extractStreamUrl(url) {
         // --- Anime ---
         const fetchVidnestAnime = async () => {
             try {
-                // Add at the beginning:
-                if (!anilistHref) {
-                    console.log("No anilist href provided for anime content");
-                    return [];
-                }
+                if (type === 'anime') {
+                    const [anilistId, episodeNumber] = path.split('/');
+                
+                    const hosts = ['hd-1', 'hd-2', 'hd-3', 'miko', 'zaza', 'shiro', 'animez'];
+                    const types = ['sub', 'dub'];
 
-                const [anilistId, episodeNumber] = anilistHref.split('/');
+                    const headers = {
+                        'Referer': 'https://vidnest.fun/',
+                        'Origin': 'https://vidnest.fun'
+                    };
 
-                const hosts = ['hd-1', 'hd-2', 'hd-3', 'shiro', 'miko', 'animez', 'zaza'];
-                const types = ['sub', 'dub'];
+                    // Build all requests
+                    const requests = [];
+                    let subtitleUrls = [];
 
-                const headers = {
-                    'Referer': 'https://vidnest.fun/',
-                    'Origin': 'https://vidnest.fun'
-                };
+                    for (const host of hosts) {
+                        const hostTitle = 
+                            host === 'miko' ? 'Aniwave' : 
+                            host === 'zaza' ? 'Animepahe' : 
+                            host === 'shiro' ? 'AniZone' : 
+                            host === 'animez' ? 'AnimeZ' : 
+                            'Zoro';
 
-                // let vidnestAnimeStreamList = [];
-
-                // for (const host of hosts) {
-                //     for (const type of types) {
-                //         const url = `https://backend.xaiby.sbs/sources?id=${anilistId}&ep=${episodeNumber}&host=${host}&type=${type}`;
-                //         const data = await soraFetch(url, { headers }).then(res => res.json());
-                //         if (data?.sources?.url) {
-                //             vidnestAnimeStreamList.push(`https://proxy-2.madaraverse.online/proxy?url=${data.sources.url}`);
-                //         }
-                //     }
-                // }
-
-                // return vidnestAnimeStreamList?.map((url, i) => ({
-                //     title: `Vidnest - ${i + 1}`,
-                //     streamUrl: `https://proxy-2.madaraverse.online/proxy?url=${url}`,
-                //     headers
-                // }));
-
-                // Build all requests
-                const requests = [];
-                for (const host of hosts) {
-                    if (host === 'miko') {
                         for (const type of types) {
                             const url = `https://backend.xaiby.sbs/sources?id=${anilistId}&ep=${episodeNumber}&host=${host}&type=${type}`;
                             requests.push(
@@ -660,9 +892,41 @@ async function extractStreamUrl(url) {
                                     .then(res => res.json())
                                     .then(data => {
                                         if (!data?.sources?.url) return null;
+
+                                        let subs = [];
+
+                                        if (data.sources?.subtitles && Array.isArray(data.sources?.subtitles)) {
+                                            subs = data.sources.subtitles;
+                                        } else if (data.sources?.tracks && Array.isArray(data.sources?.tracks)) {
+                                            subs = data.sources.tracks;
+                                        } else if (Array.isArray(data.subtitles)) {
+                                            subs = data.subtitles;
+                                        }
+
+                                        console.log("DEBUG subtitles found:", subs);
+
+                                        // Find the first English .vtt that is not a thumbnail
+                                        const found = subs.find(s =>
+                                            typeof (s.url || s.file) === "string" &&
+                                            /\.vtt$/i.test(s.url || s.file) &&
+                                            !/thumbnails\.vtt$/i.test(s.url || s.file) &&
+                                            (s.lang || s.label || "").toLowerCase().includes("english")
+                                        );
+
+                                        if (found) {
+                                            subtitleUrls = found.url || found.file;
+                                            // return {
+                                            //     lang: found.lang || found.label || "English",
+                                            //     url: found.url || found.file
+                                            // };
+                                        }
+
+                                        const streamUrl = host === 'miko' ? data.sources.url
+                                            : `https://proxy-2.madaraverse.online/proxy?url=${encodeURIComponent(data.sources.url)}`;
+
                                         return {
-                                            title: `${host.toUpperCase()} - ${type.toUpperCase()}`,
-                                            streamUrl: `${data.sources.url}`,
+                                            title: `${hostTitle} - ${host.toUpperCase()} - ${type.toUpperCase()}`,
+                                            streamUrl,
                                             headers: { Referer: data.sources?.headers?.Referer || 'https://vidnest.fun/' }
                                         };
                                     })
@@ -670,26 +934,17 @@ async function extractStreamUrl(url) {
                             );
                         }
                     }
-                    for (const type of types) {
-                        const url = `https://backend.xaiby.sbs/sources?id=${anilistId}&ep=${episodeNumber}&host=${host}&type=${type}`;
-                        requests.push(
-                            soraFetch(url, { headers })
-                                .then(res => res.json())
-                                .then(data => {
-                                    if (!data?.sources?.url) return null;
-                                    return {
-                                        title: `${host.toUpperCase()} - ${type.toUpperCase()}`,
-                                        streamUrl: `https://proxy-2.madaraverse.online/proxy?url=${data.sources.url}`,
-                                        headers: { Referer: data.sources?.headers?.Referer || 'https://vidnest.fun/' }
-                                    };
-                                })
-                                .catch(() => null)
-                        );
-                    }
-                }
 
-                const results = await Promise.all(requests);
-                return results.filter(Boolean);
+                    const results = await Promise.all(requests);
+
+                    return {
+                        streams: results.filter(Boolean),
+                        subtitles: subtitleUrls
+                    };
+
+                    // const results = await Promise.all(requests);
+                    // return results.filter(Boolean);
+                }
             } catch (e) {
                 console.log("Vidnest Anime stream extraction failed silently:", e);
                 return [];
@@ -704,7 +959,7 @@ async function extractStreamUrl(url) {
                 if (type === 'movie') {
                     // Do nothing
                     vidrockUrl = `https://vidrock.net/api/movie/${path}`;
-                } else {
+                } else if (type === 'tv') {
                     // TV format: episode-season-reversedShowId
                     const [showId, seasonNumber, episodeNumber] = path.split('/');
                     const transformed = `${episodeNumber}-${seasonNumber}-${showId.split("").reverse().join("")}`;
@@ -712,6 +967,8 @@ async function extractStreamUrl(url) {
                     const encodedTwice = btoa(encodedOnce);
 
                     vidrockUrl = `https://vidrock.net/api/tv/${encodedTwice}`;
+                } else {
+                    return null;
                 }
 
                 const headers = {
@@ -744,12 +1001,16 @@ async function extractStreamUrl(url) {
         // --- CloudStream Pro fetch ---
         const fetchCloudStreamPro = async () => {
             try {
-                const cloudStreamUrl = type === 'movie'
-                    ? `https://cdn.moviesapi.club/embed/movie/${path}`
-                    : (() => {
-                        const [showId, seasonNumber, episodeNumber] = path.split('/');
-                        return `https://cdn.moviesapi.club/embed/tv/${showId}/${seasonNumber}/${episodeNumber}`;
-                    })();
+                let cloudStreamUrl;
+
+                if (type === 'movie') {
+                    cloudStreamUrl = `https://cdn.moviesapi.club/embed/movie/${path}`
+                } else if (type === 'tv') {
+                    const [showId, seasonNumber, episodeNumber] = path.split('/');
+                    cloudStreamUrl = `https://cdn.moviesapi.club/embed/tv/${showId}/${seasonNumber}/${episodeNumber}`;
+                } else {
+                    return null;
+                }
 
                 const html = await soraFetch(cloudStreamUrl).then(res => res.text());
                 const embedRegex = /<iframe[^>]*src="([^"]+)"[^>]*>/g;
@@ -783,12 +1044,16 @@ async function extractStreamUrl(url) {
         // --- Subtitle fetch ---
         const fetchSubtitles = async () => {
             try {
-                const subtitleApiUrl = type === 'movie'
-                    ? `https://sub.wyzie.ru/search?id=${path}`
-                    : (() => {
-                        const [showId, seasonNumber, episodeNumber] = path.split('/');
-                        return `https://sub.wyzie.ru/search?id=${showId}&season=${seasonNumber}&episode=${episodeNumber}`;
-                    })();
+                let subtitleApiUrl;
+
+                if (type === 'movie') {
+                    subtitleApiUrl = `https://sub.wyzie.ru/search?id=${path}`
+                } else if (type === 'tv') {
+                    const [showId, seasonNumber, episodeNumber] = path.split('/');
+                    subtitleApiUrl = `https://sub.wyzie.ru/search?id=${showId}&season=${seasonNumber}&episode=${episodeNumber}`;
+                } else {
+                    return "";
+                }
 
                 const subtitleTrackResponse = await soraFetch(subtitleApiUrl);
                 const subtitleTrackData = await subtitleTrackResponse.json();
@@ -820,7 +1085,7 @@ async function extractStreamUrl(url) {
             vidapiStreams,
             rgShowsStreams,
             vidnestStreams,
-            vidnestAnimeStreams,
+            vidnestAnimeResult,
             vidrockStreams,
             cloudStreamProStreams,
             subtitleUrl
@@ -844,9 +1109,13 @@ async function extractStreamUrl(url) {
         streams.push(...(vidapiStreams || []));
         streams.push(...(rgShowsStreams || []));
         streams.push(...(vidnestStreams || []));
-        streams.push(...(vidnestAnimeStreams || []));
+        streams.push(...((vidnestAnimeResult?.streams) || []));
         streams.push(...(vidrockStreams || []));
         streams.push(...(cloudStreamProStreams || []));
+
+        if (vidnestAnimeResult?.subtitles?.length) {
+            subtitles = vidnestAnimeResult.subtitles;
+        }
 
         if (subtitleUrl) {
             subtitles = subtitleUrl;
