@@ -184,72 +184,79 @@ async function extractStreamUrl(url) {
 			let streams = [];
             let subtitles = "";
 
-			for (const id of ids) {
-				console.log("ID: " + id);
+			try {
+				for (const id of ids) {
+					console.log("ID: " + id);
+					console.log(ids);
 
-				const res = await soraFetch('https://myflixerz.to/ajax/episode/sources/' + id);
-				const json = await res.json();
-				const link = json.link || "";
-				const match = link.match(/\/embed-1\/v3\/e-1\/([^/?#]+)/);
-				const streamId = match ? match[1] : null;
+					if (!ids.length) throw new Error("No ids found");
 
-				console.log("Stream ID: " + streamId);
-				const url = `https://videostr.net/embed-1/v3/e-1/${streamId}?z=`;
+					const res = await soraFetch('https://myflixerz.to/ajax/episode/sources/' + id);
+					const json = await res.json();
+					const link = json.link || "";
+					const match = link.match(/\/embed-1\/v3\/e-1\/([^/?#]+)/);
+					const streamId = match ? match[1] : null;
 
-				const res2 = await soraFetch("https://mc.ofchaos.com/api/videostr?url=" + url);
-				const json2 = await res2.json();
+					console.log("Stream ID: " + streamId);
+					const url = `https://videostr.net/embed-1/v3/e-1/${streamId}?z=`;
 
-				console.log("Decrypted Sources: " + JSON.stringify(json2));
+					const res2 = await soraFetch("https://mc.ofchaos.com/api/videostr?url=" + url);
+					const json2 = await res2.json();
 
-				if (json2.sources && json2.sources.length > 0) {
-					const hlsStream = json2.sources.find(src => src.type === "hls");
+					console.log("Decrypted Sources: " + JSON.stringify(json2));
+
+					if (!json2.sources || json2.sources.length === 0) {
+						throw new Error("No sources found");
+					}
+
+					if (json2.sources && json2.sources.length > 0) {
+						const hlsStream = json2.sources.find(src => src.type === "hls");
+						if (hlsStream?.file) {
+							if (ids[0] === id) {
+								streams.push("UpCloud");
+							} else if (ids[1] === id) {
+								streams.push("AKCloud");
+							} else if (ids[2] === id) {
+								streams.push("MegaCloud");
+							}
+
+							streams.push(hlsStream.file);
+						}
+
+						if (json2.tracks) {
+							const subs = json2.tracks.filter(t => t.kind === "captions" && t.label === "English");
+							subtitles = subs[0]?.file || "";
+						}
+					}
+				}
+			} catch (error) {
+				console.log("Error: " + error + " - Using fallback method");
+				console.log(ids);
+
+				if (!ids.length) throw new Error("No ids found");
+
+				const { key, streamData } = await getWorkingKey(ids);
+				if (!key) throw new Error("No working decryption key found");
+
+				for (let i = 1; i < ids.length; i++) {
+					const hlsStream = streamData.sources?.find(src => src.type === "hls");
 					if (hlsStream?.file) {
-						if (ids[0] === id) {
-							streams.push("UpCloud");
-						} else if (ids[1] === id) {
+						if (i == 1) {
 							streams.push("AKCloud");
-						} else if (ids[2] === id) {
+						} else if (i == 2) {
 							streams.push("MegaCloud");
+						} else if (i == 3) {
+							streams.push("UpCloud");
 						}
 
 						streams.push(hlsStream.file);
 					}
 
-					if (json2.tracks) {
-						const subs = json2.tracks.filter(t => t.kind === "captions" && t.label === "English");
-						subtitles = subs[0]?.file || "";
+					if (streamData?.subtitles) {
+						subtitles = streamData.subtitles;
 					}
 				}
 			}
-
-            // console.log(ids);
-
-            // if (!ids.length) throw new Error("No ids found");
-
-            // const { key, streamData } = await getWorkingKey(ids);
-            // if (!key) throw new Error("No working decryption key found");
-
-            // let streams = [];
-            // let subtitles = "";
-
-            // for (let i = 1; i < ids.length; i++) {
-            //     const hlsStream = streamData.sources?.find(src => src.type === "hls");
-            //     if (hlsStream?.file) {
-            //         if (i == 1) {
-            //             streams.push("AKCloud");
-            //         } else if (i == 2) {
-            //             streams.push("MegaCloud");
-            //         } else if (i == 3) {
-			// 			streams.push("UpCloud");
-			// 		}
-
-            //         streams.push(hlsStream.file);
-            //     }
-
-            //     if (streamData?.subtitles) {
-            //         subtitles = streamData.subtitles;
-            //     }
-            // }
 
             const final = {
                 streams: streams,
@@ -284,72 +291,79 @@ async function extractStreamUrl(url) {
 			let streams = [];
             let subtitles = "";
 
-			for (const id of ids) {
-				console.log("ID: " + id);
+			try {
+				for (const id of ids) {
+					console.log("ID: " + id);
+					console.log(ids);
 
-				const res = await soraFetch('https://myflixerz.to/ajax/episode/sources/' + id);
-				const json = await res.json();
-				const link = json.link || "";
-				const match = link.match(/\/embed-1\/v3\/e-1\/([^/?#]+)/);
-				const streamId = match ? match[1] : null;
+					if (!ids.length) throw new Error("No ids found");
 
-				console.log("Stream ID: " + streamId);
-				const url = `https://videostr.net/embed-1/v3/e-1/${streamId}?z=`;
+					const res = await soraFetch('https://myflixerz.to/ajax/episode/sources/' + id);
+					const json = await res.json();
+					const link = json.link || "";
+					const match = link.match(/\/embed-1\/v3\/e-1\/([^/?#]+)/);
+					const streamId = match ? match[1] : null;
 
-				const res2 = await soraFetch("https://mc.ofchaos.com/api/videostr?url=" + url);
-				const json2 = await res2.json();
+					console.log("Stream ID: " + streamId);
+					const url = `https://videostr.net/embed-1/v3/e-1/${streamId}?z=`;
 
-				console.log("Decrypted Sources: " + JSON.stringify(json2));
+					const res2 = await soraFetch("https://mc.ofchaos.com/api/videostr?url=" + url);
+					const json2 = await res2.json();
 
-				if (json2.sources && json2.sources.length > 0) {
-					const hlsStream = json2.sources.find(src => src.type === "hls");
+					console.log("Decrypted Sources: " + JSON.stringify(json2));
+
+					if (!json2.sources || json2.sources.length === 0) {
+						throw new Error("No sources found");
+					}
+
+					if (json2.sources && json2.sources.length > 0) {
+						const hlsStream = json2.sources.find(src => src.type === "hls");
+						if (hlsStream?.file) {
+							if (ids[0] === id) {
+								streams.push("UpCloud");
+							} else if (ids[1] === id) {
+								streams.push("AKCloud");
+							} else if (ids[2] === id) {
+								streams.push("MegaCloud");
+							}
+
+							streams.push(hlsStream.file);
+						}
+
+						if (json2.tracks) {
+							const subs = json2.tracks.filter(t => t.kind === "captions" && t.label === "English");
+							subtitles = subs[0]?.file || "";
+						}
+					}
+				}
+			} catch (error) {
+				console.log("Error: " + error + " - Using fallback method");
+				console.log(ids);
+
+				if (!ids.length) throw new Error("No ids found");
+
+				const { key, streamData } = await getWorkingKey(ids);
+				if (!key) throw new Error("No working decryption key found");
+
+				for (let i = 1; i < ids.length; i++) {
+					const hlsStream = streamData.sources?.find(src => src.type === "hls");
 					if (hlsStream?.file) {
-						if (ids[0] === id) {
-							streams.push("UpCloud");
-						} else if (ids[1] === id) {
+						if (i == 1) {
 							streams.push("AKCloud");
-						} else if (ids[2] === id) {
+						} else if (i == 2) {
 							streams.push("MegaCloud");
+						} else if (i == 3) {
+							streams.push("UpCloud");
 						}
 
 						streams.push(hlsStream.file);
 					}
 
-					if (json2.tracks) {
-						const subs = json2.tracks.filter(t => t.kind === "captions" && t.label === "English");
-						subtitles = subs[0]?.file || "";
+					if (streamData?.subtitles) {
+						subtitles = streamData.subtitles;
 					}
 				}
 			}
-
-            // console.log(ids);
-
-            // if (!ids.length) throw new Error("No ids found");
-
-            // const { key, streamData } = await getWorkingKey(ids);
-            // if (!key) throw new Error("No working decryption key found");
-
-            // let streams = [];
-            // let subtitles = "";
-
-            // for (let i = 1; i < ids.length; i++) {
-            //     const hlsStream = streamData.sources?.find(src => src.type === "hls");
-            //     if (hlsStream?.file) {
-            //         if (i == 1) {
-            //             streams.push("AKCloud");
-            //         } else if (i == 2) {
-            //             streams.push("MegaCloud");
-			// 		} else if (i == 3) {
-			// 			streams.push("UpCloud");
-			// 		}
-
-            //         streams.push(hlsStream.file);
-            //     }
-
-            //     if (streamData?.subtitles) {
-            //         subtitles = streamData.subtitles;
-            //     }
-            // }
 
             const final = {
                 streams: streams,
@@ -407,87 +421,87 @@ async function soraFetch(url, options = { headers: {}, method: 'GET', body: null
 /////////////////////////////////////////////////////////////////////////////////////
 
 async function getWorkingKey(testIds) {
-	// try {
-	// 	const res1 = await soraFetch('https://api.lunaranime.ru/static/key.txt');
-	// 	const key = (await res1.text()).trim();
+	try {
+		const res1 = await soraFetch('https://api.lunaranime.ru/static/key.txt');
+		const key = (await res1.text()).trim();
 
-	// 	const sourceId = testIds[0]; // Only test the first ID
-	// 	const streamData = await getStreamSource(sourceId, key, false, true); // no retry
+		const sourceId = testIds[0]; // Only test the first ID
+		const streamData = await getStreamSource(sourceId, key, false, true); // no retry
 
-	// 	console.log("Testing key:", key);
-	// 	if (streamData && streamData.sources) {
-	// 		// Extract stream ID and cache it
-	// 		const res1 = await soraFetch('https://myflixerz.to/ajax/episode/sources/' + sourceId);
-	// 		const json1 = await res1.json();
-	// 		const link = json1.link || "";
-	// 		const match = link.match(/\/embed-1\/v3\/e-1\/([^/?#]+)/);
-	// 		const streamId = match ? match[1] : null;
+		console.log("Testing key:", key);
+		if (streamData && streamData.sources) {
+			// Extract stream ID and cache it
+			const res1 = await soraFetch('https://myflixerz.to/ajax/episode/sources/' + sourceId);
+			const json1 = await res1.json();
+			const link = json1.link || "";
+			const match = link.match(/\/embed-1\/v3\/e-1\/([^/?#]+)/);
+			const streamId = match ? match[1] : null;
 
-	// 		if (streamId) _keyCache.set(streamId, key);
+			if (streamId) _keyCache.set(streamId, key);
 
-	// 		return {
-	// 			key: key,
-	// 			streamData: streamData
-	// 		};
-	// 	}
-	// } catch (e) {
-	// 	console.log("Key 1 failed");
-	// }
+			return {
+				key: key,
+				streamData: streamData
+			};
+		}
+	} catch (e) {
+		console.log("Key 1 failed");
+	}
 
-	// try {
-	// 	const res = await soraFetch('https://raw.githubusercontent.com/itzzzme/megacloud-keys/refs/heads/main/key.txt');
-	// 	const key = (await res.text()).trim();
+	try {
+		const res = await soraFetch('https://raw.githubusercontent.com/itzzzme/megacloud-keys/refs/heads/main/key.txt');
+		const key = (await res.text()).trim();
 
-	// 	const sourceId = testIds[0]; // Only test the first ID
-	// 	const streamData = await getStreamSource(sourceId, key, false, true); // no retry
+		const sourceId = testIds[0]; // Only test the first ID
+		const streamData = await getStreamSource(sourceId, key, false, true); // no retry
 
-	// 	console.log("Testing key:", key);
-	// 	if (streamData && streamData.sources) {
-	// 		// Extract stream ID and cache it
-	// 		const res1 = await soraFetch('https://myflixerz.to/ajax/episode/sources/' + sourceId);
-	// 		const json1 = await res1.json();
-	// 		const link = json1.link || "";
-	// 		const match = link.match(/\/embed-1\/v3\/e-1\/([^/?#]+)/);
-	// 		const streamId = match ? match[1] : null;
+		console.log("Testing key:", key);
+		if (streamData && streamData.sources) {
+			// Extract stream ID and cache it
+			const res1 = await soraFetch('https://myflixerz.to/ajax/episode/sources/' + sourceId);
+			const json1 = await res1.json();
+			const link = json1.link || "";
+			const match = link.match(/\/embed-1\/v3\/e-1\/([^/?#]+)/);
+			const streamId = match ? match[1] : null;
 
-	// 		if (streamId) _keyCache.set(streamId, key);
+			if (streamId) _keyCache.set(streamId, key);
 
-	// 		return {
-	// 			key: key,
-	// 			streamData: streamData
-	// 		};
-	// 	}
-	// } catch (e) {
-	// 	console.log("Key fetch or test failed:", e);
-	// }
+			return {
+				key: key,
+				streamData: streamData
+			};
+		}
+	} catch (e) {
+		console.log("Key fetch or test failed:", e);
+	}
 
-	// try {
-	// 	const res3 = await soraFetch('https://justarion.github.io/keys/e1-player/src/data/keys.json');
-	// 	const json3 = await res3.json();
-	// 	const key = json3.vidstr.anime.key;
+	try {
+		const res3 = await soraFetch('https://justarion.github.io/keys/e1-player/src/data/keys.json');
+		const json3 = await res3.json();
+		const key = json3.vidstr.anime.key;
 
-	// 	const sourceId = testIds[0]; // Only test the first ID
-	// 	const streamData = await getStreamSource(sourceId, key, false, true); // no retry
+		const sourceId = testIds[0]; // Only test the first ID
+		const streamData = await getStreamSource(sourceId, key, false, true); // no retry
 
-	// 	console.log("Testing key:", key);
-	// 	if (streamData && streamData.sources) {
-	// 		// Extract stream ID and cache it
-	// 		const res1 = await soraFetch('https://myflixerz.to/ajax/episode/sources/' + sourceId);
-	// 		const json1 = await res1.json();
-	// 		const link = json1.link || "";
-	// 		const match = link.match(/\/embed-1\/v3\/e-1\/([^/?#]+)/);
-	// 		const streamId = match ? match[1] : null;
+		console.log("Testing key:", key);
+		if (streamData && streamData.sources) {
+			// Extract stream ID and cache it
+			const res1 = await soraFetch('https://myflixerz.to/ajax/episode/sources/' + sourceId);
+			const json1 = await res1.json();
+			const link = json1.link || "";
+			const match = link.match(/\/embed-1\/v3\/e-1\/([^/?#]+)/);
+			const streamId = match ? match[1] : null;
 
-	// 		if (streamId) _keyCache.set(streamId, key);
+			if (streamId) _keyCache.set(streamId, key);
 
-	// 		return {
-	// 			key: key,
-	// 			streamData: streamData
-	// 		};
-	// 	}
-	// } catch (e) {
-	// 	console.log("Key 3 failed");
-	// }
+			return {
+				key: key,
+				streamData: streamData
+			};
+		}
+	} catch (e) {
+		console.log("Key 3 failed");
+	}
 
 	try {
 		const res4 = await soraFetch('https://raw.githubusercontent.com/yogesh-hacker/MegacloudKeys/refs/heads/main/keys.json');
@@ -517,32 +531,32 @@ async function getWorkingKey(testIds) {
 		console.log("Key 4 failed");
 	}
 
-	// try {
-	// 	const res5 = await soraFetch('https://raw.githubusercontent.com/SpencerDevs/megacloud-key-updater/refs/heads/master/key.txt');
-	// 	const key = (await res5.text()).trim();
+	try {
+		const res5 = await soraFetch('https://raw.githubusercontent.com/SpencerDevs/megacloud-key-updater/refs/heads/master/key.txt');
+		const key = (await res5.text()).trim();
 
-	// 	const sourceId = testIds[0]; // Only test the first ID
-	// 	const streamData = await getStreamSource(sourceId, key, false, true); // no retry
+		const sourceId = testIds[0]; // Only test the first ID
+		const streamData = await getStreamSource(sourceId, key, false, true); // no retry
 
-	// 	console.log("Testing key:", key);
-	// 	if (streamData && streamData.sources) {
-	// 		// Extract stream ID and cache it
-	// 		const res1 = await soraFetch('https://myflixerz.to/ajax/episode/sources/' + sourceId);
-	// 		const json1 = await res1.json();
-	// 		const link = json1.link || "";
-	// 		const match = link.match(/\/embed-1\/v3\/e-1\/([^/?#]+)/);
-	// 		const streamId = match ? match[1] : null;
+		console.log("Testing key:", key);
+		if (streamData && streamData.sources) {
+			// Extract stream ID and cache it
+			const res1 = await soraFetch('https://myflixerz.to/ajax/episode/sources/' + sourceId);
+			const json1 = await res1.json();
+			const link = json1.link || "";
+			const match = link.match(/\/embed-1\/v3\/e-1\/([^/?#]+)/);
+			const streamId = match ? match[1] : null;
 
-	// 		if (streamId) _keyCache.set(streamId, key);
+			if (streamId) _keyCache.set(streamId, key);
 
-	// 		return {
-	// 			key: key,
-	// 			streamData: streamData
-	// 		};
-	// 	}
-	// } catch (e) {
-	// 	console.log("Key 5 failed");
-	// }
+			return {
+				key: key,
+				streamData: streamData
+			};
+		}
+	} catch (e) {
+		console.log("Key 5 failed");
+	}
 
 	return null;
 }
