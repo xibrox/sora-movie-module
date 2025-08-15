@@ -224,7 +224,7 @@ async function extractStreamUrl(url) {
 						}
 
 						if (json2.tracks) {
-							const subs = json2.tracks.filter(t => t.kind === "captions" && t.label === "English");
+							const subs = json2.tracks.filter(t => t.kind === "captions" && t.label.includes("English"));
 							subtitles = subs[0]?.file || "";
 						}
 					}
@@ -253,7 +253,7 @@ async function extractStreamUrl(url) {
 					}
 
 					if (streamData?.tracks) {
-						subtitles = streamData.tracks.find(t => t.kind === "captions" && t.label === "English")?.file || "";
+						subtitles = streamData.tracks.find(t => t.kind === "captions" && t.label.includes("English"))?.file || "";
 					}
 				}
 			}
@@ -331,7 +331,7 @@ async function extractStreamUrl(url) {
 						}
 
 						if (json2.tracks) {
-							const subs = json2.tracks.filter(t => t.kind === "captions" && t.label === "English");
+							const subs = json2.tracks.filter(t => t.kind === "captions" && t.label.includes("English"));
 							subtitles = subs[0]?.file || "";
 						}
 					}
@@ -360,7 +360,7 @@ async function extractStreamUrl(url) {
 					}
 
 					if (streamData?.tracks) {
-						subtitles = streamData.tracks.find(t => t.kind === "captions" && t.label === "English")?.file || "";
+						subtitles = streamData.tracks.find(t => t.kind === "captions" && t.label.includes("English"))?.file || "";
 					}
 				}
 			}
@@ -604,7 +604,7 @@ async function getStreamSource(sourceId, key, isSub, skipKeyRetry = false) {
 		if (isSub && Array.isArray(json2.tracks)) {
 			for (let i = 0; i < json2.tracks.length; i++) {
 				const t = json2.tracks[i];
-				if (t.label === "English" && t.kind === "captions") {
+				if (t.label.includes("English") && t.kind === "captions") {
 					result.subtitles = t.file;
 					console.log("English VTT:" + t.file);
 					break;

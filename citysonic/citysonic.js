@@ -224,7 +224,7 @@ async function extractStreamUrl(url) {
 						}
 
 						if (json2.tracks) {
-							const subs = json2.tracks.filter(t => t.kind === "captions" && t.label === "English");
+							const subs = json2.tracks.filter(t => t.kind === "captions" && t.label.includes("English"));
 							subtitles = subs[0]?.file || "";
 						}
 					}
@@ -253,7 +253,7 @@ async function extractStreamUrl(url) {
 					}
 
 					if (streamData?.tracks) {
-						subtitles = streamData.tracks.find(t => t.kind === "captions" && t.label === "English")?.file || "";
+						subtitles = streamData.tracks.find(t => t.kind === "captions" && t.label.includes("English"))?.file || "";
 					}
 				}
 			}
@@ -331,7 +331,7 @@ async function extractStreamUrl(url) {
 						}
 
 						if (json2.tracks) {
-							const subs = json2.tracks.filter(t => t.kind === "captions" && t.label === "English");
+							const subs = json2.tracks.filter(t => t.kind === "captions" && t.label.includes("English"));
 							subtitles = subs[0]?.file || "";
 						}
 					}
@@ -360,7 +360,7 @@ async function extractStreamUrl(url) {
 					}
 
 					if (streamData?.tracks) {
-						subtitles = streamData.tracks.find(t => t.kind === "captions" && t.label === "English")?.file || "";
+						subtitles = streamData.tracks.find(t => t.kind === "captions" && t.label.includes("English"))?.file || "";
 					}
 				}
 			}
@@ -394,6 +394,10 @@ async function extractStreamUrl(url) {
 // searchResults("Breaking bad");
 // extractEpisodes("https://citysonic.tv/tv/breaking-bad-39506");
 // extractStreamUrl("https://citysonic.tv/tv/breaking-bad-39506/7013");
+
+// searchResults("dexter");
+// extractEpisodes("https://citysonic.tv/tv/watch-dexter-resurrection-movies-free-online-128029");
+// extractStreamUrl("https://citysonic.tv/tv/watch-dexter-resurrection-movies-free-online-128029/1580575");
 
 function decodeHtmlEntities(text) {
     return text
@@ -594,6 +598,8 @@ async function getStreamSource(sourceId, key, isSub, skipKeyRetry = false) {
 		const res3 = await soraFetch(`https://videostr.net/embed-1/v3/e-1/getSources?id=${streamId}&_k=${_key}`, { headers });
 		const json2 = await res3.json();
 
+		console.log("Sources: " + JSON.stringify(json2));
+
 		const encrypted = json2.sources;
 		console.log("Encrypted Sources: " + JSON.stringify(encrypted));
 
@@ -604,7 +610,7 @@ async function getStreamSource(sourceId, key, isSub, skipKeyRetry = false) {
 		if (isSub && Array.isArray(json2.tracks)) {
 			for (let i = 0; i < json2.tracks.length; i++) {
 				const t = json2.tracks[i];
-				if (t.label === "English" && t.kind === "captions") {
+				if (t.label.includes("English") && t.kind === "captions") {
 					result.subtitles = t.file;
 					console.log("English VTT:" + t.file);
 					break;
