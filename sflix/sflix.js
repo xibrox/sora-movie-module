@@ -252,8 +252,8 @@ async function extractStreamUrl(url) {
 						streams.push(hlsStream.file);
 					}
 
-					if (streamData?.subtitles) {
-						subtitles = streamData.subtitles;
+					if (streamData?.tracks) {
+						subtitles = streamData.tracks.find(t => t.kind === "captions" && t.label === "English")?.file || "";
 					}
 				}
 			}
@@ -359,8 +359,8 @@ async function extractStreamUrl(url) {
 						streams.push(hlsStream.file);
 					}
 
-					if (streamData?.subtitles) {
-						subtitles = streamData.subtitles;
+					if (streamData?.tracks) {
+						subtitles = streamData.tracks.find(t => t.kind === "captions" && t.label === "English")?.file || "";
 					}
 				}
 			}
@@ -617,8 +617,9 @@ async function getStreamSource(sourceId, key, isSub, skipKeyRetry = false) {
 		// if (!sources) return null;
 
 		if (json2.encrypted === false) {
-			result.sources = encrypted;
-			return result;	
+			result.sources = json2.sources;
+			result.tracks = json2.tracks;
+			return result;
 		} else {
 			const decode_url = `https://script.google.com/macros/s/AKfycbx-yHTwupis_JD0lNzoOnxYcEYeXmJZrg7JeMxYnEZnLBy5V0--UxEvP-y9txHyy1TX9Q/exec?encrypted_data=${encodeURIComponent(encrypted)}&nonce=${encodeURIComponent(_key)}&secret=${encodeURIComponent(key)}`;
 
