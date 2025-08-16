@@ -235,7 +235,7 @@ async function searchResults(keyword) {
         const encodedKeyword = encodeURIComponent(keyword);
 
         // Fetch AniList results first
-        const aniData = await Anilist.search(keyword);
+        const aniData = await Anilist.search(keyword, { "isAdult": false });
 
         let transformedResults = [];
 
@@ -271,6 +271,8 @@ async function searchResults(keyword) {
                         };
                     }
                 })
+                .filter(result => result.title !== "Overflow")
+                .filter(result => result.title !== "My Marriage Partner Is My Student, a Cocky Troublemaker")
             );
         }
 
