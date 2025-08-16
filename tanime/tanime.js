@@ -142,7 +142,7 @@ async function extractStreamUrl(url) {
 
         let streams = [
             {
-                title: "HD-4 - RAW",
+                title: "HD-4 - SUB",
                 streamUrl: finalData.sources?.file ?? "",
                 headers: {
                     "Referer": "https://vidwish.live/",
@@ -177,7 +177,9 @@ async function extractStreamUrl(url) {
             }
         });
         
-        const subtitles = finalData.tracks?.find(track => track.label.includes("English") && track.kind === "captions")?.file ?? "";
+        const subs = finalData.tracks?.find(track => track.label.includes("English") && track.kind === "captions")?.file ?? "";
+
+        const subtitles = `https://headers-checker.vercel.app/api/fetch?url=${subs}&referer=https://vidwish.live/&origin=https://vidwish.live`
 
         // const responseMegaplay = await soraFetch(`https://megaplay.buzz/stream/s-2/${episodeNumber}/sub`, { headers });
         // const dataMegaplay = await responseMegaplay.text();
