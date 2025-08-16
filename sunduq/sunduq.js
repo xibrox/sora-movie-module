@@ -720,12 +720,12 @@ async function extractStreamUrl(url) {
                 let vidapiUrl;
 
                 if (type === 'movie') {
-                    vidapiUrl = `https://vidapi.xyz/embed/movie/${path}`
+                    vidapiUrl = `https://vidapi.xyz/embed/movie/${path}`;
                 } else if (type === 'tv') {
                     const [showId, seasonNumber, episodeNumber] = path.split('/');
                     vidapiUrl = `https://vidapi.xyz/embed/tv/${showId}&s=${seasonNumber}&e=${episodeNumber}`;
                 } else {
-                    return null;
+                    return [];
                 }
 
                 const headers = { 'Referer': 'https://vidapi.xyz/' };
@@ -739,84 +739,119 @@ async function extractStreamUrl(url) {
                     iframeSrc = "https://uqloads.xyz/e/" + iframeSrc;
                 }
 
-                const iframeRes = await soraFetch(iframeSrc, { headers });
-                const iframeHtml = await iframeRes.text();
+                let allStreams = [];
 
-                const packedScriptMatch = iframeHtml.match(/(eval\(function\(p,a,c,k,e,d[\s\S]*?)<\/script>/);
-                if (!packedScriptMatch) return [];
+                // --- uqloads.xyz direct ---
+                if (iframeSrc.includes("uqloads.xyz")) {
+                    const iframeHtml = await soraFetch(iframeSrc, { headers }).then(res => res.text());
 
-                const unpackedScript = unpack(packedScriptMatch[1]);
+                    const packedScriptMatch = iframeHtml.match(/(eval\(function\(p,a,c,k,e,d[\s\S]*?)<\/script>/);
+                    if (packedScriptMatch) {
+                        const unpackedScript = unpack(packedScriptMatch[1]);
 
-                const streamRegex = /"hls[1-9]":\s*"([^"]+)"/g;
-                let match;
-                const vidapiStreamList = [];
-
-                while ((match = streamRegex.exec(unpackedScript)) !== null) {
-                    const streamUrl = match[1].trim();
-
-                    if (
-                        streamUrl.startsWith("https://") &&
-                        (streamUrl.includes(".m3u8") || streamUrl.includes(".mp4"))
-                    ) {
-                        vidapiStreamList.push(streamUrl);
-                    } else {
-                        console.log("Skipping invalid or relative Vidapi stream:", streamUrl);
+                        const streamRegex = /"hls[1-9]":\s*"([^"]+)"/g;
+                        let match;
+                        while ((match = streamRegex.exec(unpackedScript)) !== null) {
+                            const streamUrl = match[1].trim();
+                            if (streamUrl.startsWith("https://") && (streamUrl.includes(".m3u8") || streamUrl.includes(".mp4"))) {
+                                allStreams.push(streamUrl);
+                            }
+                        }
                     }
                 }
 
-                if (vidapiStreamList.length === 1) {
-                    return [{
-                        title: 'Vidapi',
-                        streamUrl: vidapiStreamList[0],
-                        headers
-                    }];
-                } else {
-                    return vidapiStreamList.map((url, i) => ({
-                        title: `Vidapi - ${i + 1}`,
-                        streamUrl: url,
-                        headers
-                    }));
+                // --- player4u.xyz multi-res ---
+                else if (iframeSrc.includes("player4u.xyz")) {
+                    const playerHtml = await soraFetch(iframeSrc, { headers }).then(res => res.text());
+
+                    const liRegex = /<li class="slide-toggle">([\s\S]*?)<\/li>/g;
+                    let liMatch;
+                    while ((liMatch = liRegex.exec(playerHtml)) !== null) {
+                        const liContent = liMatch[1];
+                        const urlMatch = liContent.match(/onclick="go\('([^']+)'\)"/);
+                        if (!urlMatch) continue;
+
+                        const fullUrl = "https://player4u.xyz" + urlMatch[1];
+                        try {
+                            const innerHtml = await soraFetch(fullUrl, { headers }).then(res => res.text());
+
+                            const innerIframeMatch = innerHtml.match(/<iframe[^>]+src=["']([^"']+)["']/);
+                            if (!innerIframeMatch) continue;
+
+                            let iframeSrc2 = innerIframeMatch[1].trim();
+                            if (!iframeSrc2.startsWith("http")) {
+                                iframeSrc2 = "https://uqloads.xyz/e/" + iframeSrc2;
+                            }
+
+                            const iframeHtml2 = await soraFetch(iframeSrc2, { headers }).then(res => res.text());
+                            const packedScriptMatch = iframeHtml2.match(/(eval\(function\(p,a,c,k,e,d[\s\S]*?)<\/script>/);
+                            if (!packedScriptMatch) continue;
+
+                            const unpackedScript = unpack(packedScriptMatch[1]);
+
+                            const streamRegex = /"hls[1-9]":\s*"([^"]+)"/g;
+                            let match;
+                            while ((match = streamRegex.exec(unpackedScript)) !== null) {
+                                const streamUrl = match[1].trim();
+                                if (streamUrl.startsWith("https://") && (streamUrl.includes(".m3u8") || streamUrl.includes(".mp4"))) {
+                                    allStreams.push(streamUrl);
+                                }
+                            }
+                        } catch (err) {
+                            console.log("Error fetching inner player4u stream:", err);
+                            continue;
+                        }
+                    }
                 }
+
+                // --- Format results ---
+                if (allStreams.length === 0) return [];
+
+                return allStreams.map((url, i) => ({
+                    title: `Vidapi - ${i + 1}`,
+                    streamUrl: url,
+                    headers,
+                }));
             } catch (e) {
-                console.log("Vidapi stream extraction failed silently:", e);
+                console.log("Vidapi stream extraction failed:", e);
                 return [];
             }
         };
 
         // --- RgShows fetch ---
-        const fetchRgShows = async () => {
-            try {
-                let rgShowsUrl;
+        // const fetchRgShows = async () => {
+        //     try {
+        //         let rgShowsUrl;
 
-                if (type === 'movie') {
-                    rgShowsUrl = `https://api.rgshows.me/main/movie/${path}`
-                } else if (type === 'tv') {
-                    const [showId, seasonNumber, episodeNumber] = path.split('/');
-                    rgShowsUrl = `https://api.rgshows.me/main/tv/${showId}/${seasonNumber}/${episodeNumber}`;
-                } else {
-                    return null;
-                }
+        //         if (type === 'movie') {
+        //             rgShowsUrl = `https://api.rgshows.me/main/movie/${path}`
+        //         } else if (type === 'tv') {
+        //             const [showId, seasonNumber, episodeNumber] = path.split('/');
+        //             rgShowsUrl = `https://api.rgshows.me/main/tv/${showId}/${seasonNumber}/${episodeNumber}`;
+        //         } else {
+        //             return null;
+        //         }
 
-                const headers = {
-                    'Origin': 'https://www.vidsrc.wtf',
-                    'Referer': 'https://www.vidsrc.wtf/'
-                };
+        //         const headers = {
+        //             'Origin': 'https://www.vidsrc.wtf',
+        //             'Referer': 'https://www.vidsrc.wtf/'
+        //         };
 
-                const rgShowsResponse = await soraFetch(rgShowsUrl, { headers });
-                const rgShowsData = await rgShowsResponse.json();
+        //         const rgShowsResponse = await soraFetch(rgShowsUrl, { headers });
+        //         const rgShowsData = await rgShowsResponse.json();
 
-                if (rgShowsData && rgShowsData.stream) {
-                    return [{
-                        title: `RgShows`,
-                        streamUrl: rgShowsData.stream.url,
-                        headers: { Referer: "https://www.vidsrc.wtf/" }
-                    }];
-                }
-            } catch (e) {
-                console.log('RgShows fetch failed silently:', e);
-            }
-            return [];
-        };
+        //         if (rgShowsData && rgShowsData.stream) {
+        //             return [{
+        //                 title: `RgShows`,
+        //                 streamUrl: rgShowsData.stream.url,
+        //                 headers: { Referer: "https://www.vidsrc.wtf/" }
+        //             }];
+        //         }
+        //     } catch (e) {
+        //         console.log('RgShows fetch failed silently:', e);
+        //     }
+        //     return [];
+        // };
 
         // --- Vidnest.fun ---
         // --- Movies and TV shows ---
@@ -1083,7 +1118,7 @@ async function extractStreamUrl(url) {
             xprimeStreams,
             vixSrcStreams,
             vidapiStreams,
-            rgShowsStreams,
+            // rgShowsStreams,
             vidnestStreams,
             vidnestAnimeResult,
             vidrockStreams,
@@ -1094,7 +1129,7 @@ async function extractStreamUrl(url) {
             fetchXPrime(),
             fetchVixSrc(),
             fetchVidapi(),
-            fetchRgShows(),
+            // fetchRgShows(),
             fetchVidnest(),
             fetchVidnestAnime(),
             fetchVidrock(),
@@ -1107,7 +1142,7 @@ async function extractStreamUrl(url) {
         streams.push(...(xprimeStreams || []));
         streams.push(...(vixSrcStreams || []));
         streams.push(...(vidapiStreams || []));
-        streams.push(...(rgShowsStreams || []));
+        // streams.push(...(rgShowsStreams || []));
         streams.push(...(vidnestStreams || []));
         streams.push(...((vidnestAnimeResult?.streams) || []));
         streams.push(...(vidrockStreams || []));
