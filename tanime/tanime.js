@@ -101,8 +101,6 @@ async function extractEpisodes(id) {
 }
 
 async function extractStreamUrl(url) {
-    if (!_0xCheck()) return 'https://files.catbox.moe/avolvc.mp4';
-
     try {
         const response = await soraFetch(url);
         const data = await response.json();
@@ -114,72 +112,30 @@ async function extractStreamUrl(url) {
             serverName: server.serverName,
         }));
 
-        console.log(servers);
+        console.log("Servers:", servers);
 
         const matchEpisodeNumber = url.match(/ep=(\d+)/);
         const episodeNumber = matchEpisodeNumber ? matchEpisodeNumber[1] : null;
 
-        const headers = {
-            "Referer": "https://tanime.tv/",
-        }
+        if (!episodeNumber) throw new Error("Episode number not found in URL");
 
-        const responseVidwish = await soraFetch(`https://vidwish.live/stream/s-2/${episodeNumber}/sub`, { headers });
-        const dataVidwish = await responseVidwish.text();
+        const headers = { Referer: "https://tanime.tv/" };
 
-        console.log(dataVidwish);
+        // fetch both streams in parallel
+        const [subStream, dubStream] = await Promise.all([
+            fetchVidwishStream("sub", "HD-4 - SUB", episodeNumber, headers),
+            fetchVidwishStream("dub", "HD-4 - DUB", episodeNumber, headers)
+        ]);
 
-        if (!dataVidwish) throw new Error('Data Vidwish not found');
+        const streams = [subStream, dubStream];
 
-        const idVidwish = dataVidwish.match(/data-id="(\d+)"/)[1];
+        // subtitles: prefer sub’s subtitle file
+        const subtitles = subStream.subs
+            ? `https://headers-checker.vercel.app/api/fetch?url=${subStream.subs}&referer=https://vidwish.live/&origin=https://vidwish.live`
+            : "";
 
-        console.log(idVidwish);
-
-        const finalUrl = `https://vidwish.live/stream/getSources?id=${idVidwish}&id=${idVidwish}`;
-        console.log("Final URL:", finalUrl);
-        const finalResponse = await soraFetch(finalUrl, { headers });
-        const finalData = await finalResponse.json();
-        console.error("Final Data:", finalData);
-
-        let streams = [
-            {
-                title: "HD-4 - SUB",
-                streamUrl: finalData.sources?.file ?? "",
-                headers: {
-                    "Referer": "https://vidwish.live/",
-                    "Origin": "https://vidwish.live"
-                }
-            }
-        ];
-
-        const responseVidwishDub = await soraFetch(`https://vidwish.live/stream/s-2/${episodeNumber}/dub`, { headers });
-        const dataVidwishDub = await responseVidwishDub.text();
-
-        console.log(dataVidwishDub);
-
-        if (!dataVidwishDub) throw new Error('Data Vidwish not found');
-
-        const idVidwishDub = dataVidwishDub.match(/data-id="(\d+)"/)[1];
-
-        console.log(idVidwishDub);
-
-        const finalUrlDub = `https://vidwish.live/stream/getSources?id=${idVidwishDub}&id=${idVidwishDub}`;
-        console.log("Final URL:", finalUrlDub);
-        const finalResponseDub = await soraFetch(finalUrlDub, { headers });
-        const finalDataDub = await finalResponseDub.json();
-        console.error("Final Data:", finalDataDub);
-
-        streams.push({
-            title: "HD-4 - DUB",
-            streamUrl: finalDataDub.sources?.file ?? "",
-            headers: {
-                "Referer": "https://vidwish.live/",
-                "Origin": "https://vidwish.live"
-            }
-        });
-        
-        const subs = finalData.tracks?.find(track => track.label.includes("English") && track.kind === "captions")?.file ?? "";
-
-        const subtitles = `https://headers-checker.vercel.app/api/fetch?url=${subs}&referer=https://vidwish.live/&origin=https://vidwish.live`
+        console.log("Streams:", streams);
+        console.log("Subtitles:", subtitles);
 
         // const responseMegaplay = await soraFetch(`https://megaplay.buzz/stream/s-2/${episodeNumber}/sub`, { headers });
         // const dataMegaplay = await responseMegaplay.text();
@@ -227,6 +183,37 @@ async function extractStreamUrl(url) {
     }
 }
 
+// helper to fetch Vidwish source by type (sub/dub)
+async function fetchVidwishStream(lang, title, episodeNumber, headers) {
+    const res = await soraFetch(`https://vidwish.live/stream/s-2/${episodeNumber}/${lang}`, { headers });
+    const html = await res.text();
+
+    if (!html) throw new Error(`Vidwish ${lang.toUpperCase()} data not found`);
+
+    const idMatch = html.match(/data-id="(\d+)"/);
+    if (!idMatch) throw new Error(`Vidwish ${lang.toUpperCase()} id not found`);
+    const id = idMatch[1];
+
+    console.log(`${lang.toUpperCase()} ID:`, id);
+
+    const apiUrl = `https://vidwish.live/stream/getSources?id=${id}&id=${id}`;
+    console.log(`${lang.toUpperCase()} Final URL:`, apiUrl);
+
+    const apiRes = await soraFetch(apiUrl, { headers });
+    const json = await apiRes.json();
+    console.error(`${lang.toUpperCase()} Final Data:`, json);
+
+    return {
+        title,
+        streamUrl: (json.sources && json.sources.file) || "",
+        headers: {
+            Referer: "https://vidwish.live/",
+            Origin: "https://vidwish.live"
+        },
+        subs: (json.tracks || []).find(track => track.label.includes("English") && track.kind === "captions")?.file || ""
+    };
+}
+
 async function soraFetch(url, options = { headers: {}, method: 'GET', body: null }) {
     try {
         return await fetchv2(url, options.headers ?? {}, options.method ?? 'GET', options.body ?? null);
@@ -238,13 +225,3 @@ async function soraFetch(url, options = { headers: {}, method: 'GET', body: null
         }
     }
 }
-
-function _0xCheck() {
-    var _0x1a = typeof _0xB4F2 === 'function';
-    var _0x2b = typeof _0x7E9A === 'function';
-    return _0x1a && _0x2b ? (function(_0x3c) {
-        return _0x7E9A(_0x3c);
-    })(_0xB4F2()) : !1;
-}
-
-function _0x7E9A(_){return((___,____,_____,______,_______,________,_________,__________,___________,____________)=>(____=typeof ___,_____=___&&___[String.fromCharCode(...[108,101,110,103,116,104])],______=[...String.fromCharCode(...[99,114,97,110,99,105])],_______=___?[...___[String.fromCharCode(...[116,111,76,111,119,101,114,67,97,115,101])]()]:[],(________=______[String.fromCharCode(...[115,108,105,99,101])]())&&_______[String.fromCharCode(...[102,111,114,69,97,99,104])]((_________,__________)=>(___________=________[String.fromCharCode(...[105,110,100,101,120,79,102])](_________))>=0&&________[String.fromCharCode(...[115,112,108,105,99,101])](___________,1)),____===String.fromCharCode(...[115,116,114,105,110,103])&&_____===16&&________[String.fromCharCode(...[108,101,110,103,116,104])]===0))(_)}
