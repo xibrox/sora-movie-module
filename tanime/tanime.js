@@ -29,6 +29,11 @@ async function searchResults(keyword) {
 // extractEpisodes("one-punch-man-63");
 extractStreamUrl("https://tanime.tv/api/servers/one-punch-man-63?ep=1501");
 
+// searchResults("Clannad");
+// extractDetails("clannad-after-story-15");
+// extractEpisodes("clannad-after-story-15");
+// extractStreamUrl("https://tanime.tv/api/servers/clannad-after-story-15?ep=707");
+
 async function extractDetails(id) {
     try {
         const response = await soraFetch(`https://tanime.tv/api/info?id=${id}`);
@@ -107,7 +112,6 @@ async function extractStreamUrl(url) {
 
         console.log(url);
 
-        // https://tanime.tv/api/servers/one-punch-man-63?ep=1501
         const match = url.match(/\/api\/servers\/([a-z0-9-]+)\?ep=(\d+)/i);
         if (!match) throw new Error("Invalid URL format");
 
@@ -127,31 +131,42 @@ async function extractStreamUrl(url) {
 
         const headers = { Referer: "https://tanime.tv/" };
 
+        let streams = [];
+        let subtitles = "";
+
         // fetch both streams in parallel
-        const [MegacloudSubStream, MegacloudDubStream, VidwishSubStream, VidwishDubStream] = await Promise.all([
+        const [MegacloudSubStream, MegacloudDubStream, MegacloudSubStream2, MegacloudDubStream2, VidwishSubStream, VidwishDubStream] = await Promise.all([
+            fetchMegacloudStream2("sub", "HD-2 - SUB", animeId, episodeNumber, headers),
+            fetchMegacloudStream2("dub", "HD-2 - DUB", animeId, episodeNumber, headers),
             fetchMegacloudStream("sub", "HD-3 - SUB", animeId, episodeNumber, headers),
             fetchMegacloudStream("dub", "HD-3 - DUB", animeId, episodeNumber, headers),
             fetchVidwishStream("sub", "HD-4 - SUB", episodeNumber, headers),
             fetchVidwishStream("dub", "HD-4 - DUB", episodeNumber, headers),
         ]);
 
-        const streams = [MegacloudSubStream.stream, MegacloudDubStream.stream, VidwishSubStream.stream, VidwishDubStream.stream];
+        for (const stream of [MegacloudSubStream, MegacloudDubStream, MegacloudSubStream2, MegacloudDubStream2, VidwishSubStream, VidwishDubStream]) {
+            if (!stream) continue;
+            if (!stream.stream) continue;
 
-        let subtitles = "";
+            streams.push(stream.stream);
 
-        console.log("MegaCloud Sub Stream:", MegacloudSubStream.subs);
-        console.log("Vidwish Sub Stream:", VidwishSubStream.subs);
-
-        if (MegacloudSubStream.subs) {
-            subtitles = MegacloudSubStream.subs;
-        } else if (VidwishSubStream.subs) {
-            subtitles = `https://headers-checker.vercel.app/api/fetch?url=${VidwishSubStream.subs}&referer=https://vidwish.live/&origin=https://vidwish.live`;
+            if (!stream.subs) continue;
+        
+            if (stream.subs === MegacloudSubStream.subs) {
+                subtitles = MegacloudSubStream.subs;
+            } else if (stream.subs === MegacloudSubStream2.subs) {
+                subtitles = MegacloudSubStream2.subs;
+            } else if (stream.subs === VidwishSubStream.subs) {
+                subtitles = `https://headers-checker.vercel.app/api/fetch?url=${VidwishSubStream.subs}&referer=https://vidwish.live/&origin=https://vidwish.live`;
+            }
         }
 
         console.log("Streams:", streams);
         console.log("Subtitles:", subtitles);
 
-        // const responseMegaplay = await soraFetch(`https://megaplay.buzz/stream/s-2/${episodeNumber}/sub`, { headers });
+        // const megaplayUrl = `https://megaplay.buzz/stream/s-2/${episodeNumber}/sub`;
+
+        // const responseMegaplay = await soraFetch(megaplayUrl, { headers });
         // const dataMegaplay = await responseMegaplay.text();
 
         // console.log(dataMegaplay);
@@ -162,19 +177,23 @@ async function extractStreamUrl(url) {
 
         // console.log(idMegaplay);
 
+        // const headers2 = {
+        //     "X-Requested-With": "XMLHttpRequest"
+        // };
+
         // const finalUrlMegaplay = `https://megaplay.buzz/stream/getSources?id=${idMegaplay}&id=${idMegaplay}`;
         // console.log("Final URL:", finalUrlMegaplay);
-        // const finalResponseMegaplay = await soraFetch(finalUrlMegaplay, { headers });
+        // const finalResponseMegaplay = await soraFetch(finalUrlMegaplay, { headers2: { ...headers2, ...headers } });
         // const finalDataMegaplay = await finalResponseMegaplay.json();
         // console.error("Final Data:", finalDataMegaplay);
 
-        // let streams = [
+        // streams.push(
         //     {
         //         title: "HD-1",
-        //         streamUrl: finalDataMegaplay.sources?.file ?? "",
+        //         streamUrl: finalDataMegaplay?.sources?.file ?? "",
         //         headers: {}
         //     }
-        // ];
+        // );
         // const subtitles = finalDataMegaplay.tracks?.find(track => track.label.includes("English") && track.kind === "captions")?.file ?? "";
 
         const result = {
@@ -216,16 +235,19 @@ async function fetchVidwishStream(lang, title, episodeNumber, headers) {
     const json = await apiRes.json();
     console.error(`${lang.toUpperCase()} Final Data:`, json);
 
+    if (!json) return;
+    if (json.error) return;
+
     return {
         stream: {
             title,
-            streamUrl: (json.sources && json.sources.file) || "",
+            streamUrl: (json?.sources && json?.sources.file) || "",
             headers: {
                 Referer: "https://vidwish.live/",
                 Origin: "https://vidwish.live"
             },
         },
-        subs: (json.tracks || []).find(track => track.label?.includes("English") && track?.kind === "captions")?.file || ""
+        subs: (json?.tracks || []).find(track => track.label?.includes("English") && track?.kind === "captions")?.file || ""
     };
 }
 
@@ -239,18 +261,47 @@ async function fetchMegacloudStream(lang, title, animeId, episodeNumber, headers
 
     const json = data.results.streamingLink;
 
-    console.log("TRACKS MEGACLOUD: " + JSON.stringify(json.tracks));
+    console.log("TRACKS MEGACLOUD: " + JSON.stringify(json?.tracks));
+
+    if (!json) return;
 
     return {
         stream: {
             title,
-            streamUrl: (json.link && json.link.file) || "",
+            streamUrl: (json?.link && json?.link?.file) || "",
             headers: {
                 Referer: "https://megacloud.blog/",
                 Origin: "https://megacloud.blog"
             },
         },
-        subs: (json.tracks || []).find(track => track.label?.includes("English") && track?.kind === "captions")?.file || ""
+        subs: (json?.tracks || []).find(track => track.label?.includes("English") && track?.kind === "captions")?.file || ""
+    };
+}
+
+async function fetchMegacloudStream2(lang, title, animeId, episodeNumber, headers) {
+    const res = await soraFetch(`https://tanime.tv/api/stream?id=${animeId}?ep=${episodeNumber}&server=hd-2&type=${lang}`, { headers });
+    const data = await res.json();
+
+    if (!data) throw new Error(`MegaCloud ${lang.toUpperCase()} data not found`);
+
+    console.log("DATA MEGACLOUD: " + JSON.stringify(data));
+
+    const json = data.results.streamingLink;
+
+    console.log("TRACKS MEGACLOUD: " + JSON.stringify(json?.tracks));
+
+    if (!json) return;
+
+    return {
+        stream: {
+            title,
+            streamUrl: (json?.link && json?.link?.file) || "",
+            headers: {
+                Referer: "https://megacloud.blog/",
+                Origin: "https://megacloud.blog"
+            },
+        },
+        subs: (json?.tracks || []).find(track => track?.label?.includes("English") && track?.kind === "captions")?.file || ""
     };
 }
 
