@@ -378,15 +378,15 @@ async function searchResults(keyword) {
         const encodedKeyword = encodeURIComponent(keyword);
         let baseUrl = null;
 
-        if (keyword.startsWith('!trending') || keyword.startsWith('!hot') || keyword.startsWith('!tr')) {
+        if (keyword.startsWith('!trending') || keyword.startsWith('!hot') || keyword.startsWith('!tr') || keyword.startsWith('!!')) {
             baseUrl = `https://api.themoviedb.org/3/trending/all/week?api_key=9801b6b0548ad57581d111ea690c85c8&include_adult=false&page=`;
-        } else if (keyword.startsWith('!top-rated-movie') || keyword.startsWith('!topmovie') || keyword.startsWith('!tm')) {
+        } else if (keyword.startsWith('!top-rated-movie') || keyword.startsWith('!topmovie') || keyword.startsWith('!tm') || keyword.startsWith('?')) {
             baseUrl = `https://api.themoviedb.org/3/movie/top_rated?api_key=9801b6b0548ad57581d111ea690c85c8&include_adult=false&page=`;
-        } else if (keyword.startsWith('!top-rated-tv') || keyword.startsWith('!toptv') || keyword.startsWith('!tt')) {
+        } else if (keyword.startsWith('!top-rated-tv') || keyword.startsWith('!toptv') || keyword.startsWith('!tt') || keyword.startsWith('??')) {
             baseUrl = `https://api.themoviedb.org/3/tv/top_rated?api_key=9801b6b0548ad57581d111ea690c85c8&include_adult=false&page=`;
-        } else if (keyword.startsWith('!popular-movie') || keyword.startsWith('!popmovie') || keyword.startsWith('!pm')) {
+        } else if (keyword.startsWith('!popular-movie') || keyword.startsWith('!popmovie') || keyword.startsWith('!pm') || keyword.startsWith('.')) {
             baseUrl = `https://api.themoviedb.org/3/movie/popular?api_key=9801b6b0548ad57581d111ea690c85c8&include_adult=false&page=`;
-        } else if (keyword.startsWith('!popular-tv') || keyword.startsWith('!poptv') || keyword.startsWith('!pt')) {
+        } else if (keyword.startsWith('!popular-tv') || keyword.startsWith('!poptv') || keyword.startsWith('!pt') || keyword.startsWith('..')) {
             baseUrl = `https://api.themoviedb.org/3/tv/popular?api_key=9801b6b0548ad57581d111ea690c85c8&include_adult=false&page=`;
         } else if (!keyword.startsWith('!anime')) {
             baseUrl = `https://api.themoviedb.org/3/search/multi?api_key=9801b6b0548ad57581d111ea690c85c8&query=${encodedKeyword}&include_adult=false&page=`;
