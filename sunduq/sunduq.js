@@ -1093,6 +1093,7 @@ async function extractStreamUrl(url) {
                             'Zoro';
 
                         for (const type of types) {
+                            if (type === 'dub' && host === 'animez') continue;
                             const url = `https://backend.xaiby.sbs/sources?id=${anilistId}&ep=${episodeNumber}&host=${host}&type=${type}`;
                             requests.push(
                                 soraFetch(url, { headers })
