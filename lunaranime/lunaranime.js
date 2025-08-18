@@ -456,7 +456,7 @@ async function extractEpisodes(url) {
 
 // extractDetails("anime/2167");
 // extractEpisodes("anime/2167");
-extractStreamUrl("anime/130003/1");
+// extractStreamUrl("anime/130003/1");
 
 // searchResults("One piece");
 // extractEpisodes("anime/21");
