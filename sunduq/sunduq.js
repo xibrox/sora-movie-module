@@ -598,7 +598,7 @@ async function extractEpisodes(url) {
     }    
 }
 
-searchResults("!trending");
+// searchResults("!trending");
 
 // searchResults("clannad");
 // extractDetails("tv/24835/1/1");
@@ -1072,7 +1072,7 @@ async function extractStreamUrl(url) {
                 if (type === 'anime') {
                     const [anilistId, episodeNumber] = path.split('/');
                 
-                    const hosts = ['animez', 'zaza', 'miko', 'hd-1', 'hd-2', 'hd-3', 'shiro'];
+                    const hosts = ['zaza', 'miko', 'animez', 'hd-1', 'hd-2', 'hd-3', 'shiro'];
                     const types = ['sub', 'dub'];
 
                     const headers = {
