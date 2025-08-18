@@ -147,8 +147,107 @@ class Anilist {
         return Anilist.anilistFetch(query, variables);
     }
 
-    static async getLatest() {
+    static async getLatest(filters) {
+        let page = 0;
+        let hasNextPage = true;
+        const perPage = 50;
+        const currentDate = new Date();
 
+        filters.seasonYear = currentDate.getFullYear();
+        filters.season = Anilist.monthToSeason(currentDate.getMonth());
+
+        const results = [];
+
+        do {
+            page++;
+
+            const query = `query (
+                $page: Int,
+                $perPage: Int,
+                $sort: [MediaSort],
+                $type: MediaType,
+                $status: MediaStatus,
+                $isAdult: Boolean,
+                $seasonYear: Int,
+                $season: MediaSeason
+            ) {
+                Page(page: $page, perPage: $perPage) {
+                    media(
+                        type: $type,
+                        sort: $sort,
+                        status: $status,
+                        isAdult: $isAdult,
+                        seasonYear: $seasonYear,
+                        season: $season
+                    ) {
+                        id
+                        idMal
+                        averageScore
+                        title {
+                            romaji
+                            english
+                            native
+                        }
+                        episodes
+                        nextAiringEpisode {
+                            airingAt
+                            timeUntilAiring
+                            episode
+                        }
+                        status
+                        genres
+                        format
+                        description
+                        startDate {
+                            year
+                            month
+                            day
+                        }
+                        endDate {
+                            year
+                            month
+                            day
+                        }
+                        popularity
+                        coverImage {
+                            color
+                            large
+                            extraLarge
+                        }
+                    }
+                    pageInfo {
+                        hasNextPage
+                    }
+                }
+            }`;
+
+            const variables = {
+                "page": page,
+                "perPage": perPage,
+                "sort": [
+                    "POPULARITY_DESC"
+                ],
+                "type": "ANIME",
+                "status": "RELEASING",
+                ...filters
+            }
+
+            const fetchResults = await Anilist.anilistFetch(query, variables);
+            results.push(fetchResults);
+
+            if(fetchResults?.Page?.pageInfo?.hasNextPage !== true) {
+                hasNextPage = false;
+            }
+
+        } while(hasNextPage);
+
+        const mergedObject = { Page: { media: []}};
+
+        for(let page of results) {
+            mergedObject.Page.media = mergedObject.Page.media.concat(page.Page.media);
+        }
+
+        return mergedObject;
     }
 
     static async anilistFetch(query, variables) {
@@ -224,6 +323,16 @@ class Anilist {
 
         return `Next episode will air in ${days} days, ${hours} hours and ${minutes} minutes at ${airDate.getFullYear()}-${(airDate.getMonth() + 1).toString().padStart(2, '0')}-${(airDate.getDate()).toString().padStart(2, '0')} ${airDate.getHours()}:${airDate.getMinutes()}`;
     }
+
+    static monthToSeason(month) {
+        // Month is 0 indexed
+        const seasons = ['WINTER', 'SPRING', 'SUMMER', 'FALL'];
+        if(month == 11) return seasons[0];
+        if(month <= 1) return seasons[0];
+        if(month <= 4) return seasons[1];
+        if(month <= 7) return seasons[2];
+        return seasons[3];
+    }
 }
 
 function sleep(ms) {
@@ -232,56 +341,114 @@ function sleep(ms) {
 
 async function searchResults(keyword) {
     try {
-        const encodedKeyword = encodeURIComponent(keyword);
+        let aniData = null;
 
-        // Fetch AniList results first
-        const aniData = await Anilist.search(keyword, { "isAdult": false });
+        // --- AniList Search ---
+        if (keyword.startsWith('!anime') || keyword.startsWith('!a') || keyword.startsWith('!')) {
+            aniData = await Anilist.getLatest({ isAdult: false });
+        } else if (
+            !keyword.startsWith('!trending') &&
+            !keyword.startsWith('!top-rated-movie') &&
+            !keyword.startsWith('!top-rated-tv') &&
+            !keyword.startsWith('!popular-movie') &&
+            !keyword.startsWith('!popular-tv')
+        ) {
+            aniData = await Anilist.search(keyword, { isAdult: false });
+        }
 
         let transformedResults = [];
 
-        if (aniData && aniData.Page && aniData.Page.media && aniData.Page.media.length > 0) {
-            transformedResults = aniData.Page.media.map(result => {
-                return {
-                    title: result.title.english || result.title.romaji || result.title.native || "Untitled",
-                    image: result.coverImage.extraLarge || result.coverImage.large || result.coverImage.medium || "",
-                    href: `anime/${result.id}`
-                };
-            });
+        if (aniData?.Page?.media?.length > 0) {
+            transformedResults = aniData.Page.media.map(result => ({
+                title:
+                    result.title.english ||
+                    result.title.romaji ||
+                    result.title.native ||
+                    "Untitled",
+                image:
+                    result.coverImage.extraLarge ||
+                    result.coverImage.large ||
+                    result.coverImage.medium ||
+                    "",
+                href: `anime/${result.id}`,
+            }));
         }
 
-        // Fetch TMDB results after AniList
-        const data = await soraFetch(
-            `https://api.themoviedb.org/3/search/multi?api_key=9801b6b0548ad57581d111ea690c85c8&query=${encodedKeyword}&include_adult=false`
-        ).then(r => r.json());
+        // --- TMDB Section ---
+        const encodedKeyword = encodeURIComponent(keyword);
+        let baseUrl = null;
 
-        if (data && data.results && data.results.length > 0) {
+        if (keyword.startsWith('!trending') || keyword.startsWith('!hot') || keyword.startsWith('!tr')) {
+            baseUrl = `https://api.themoviedb.org/3/trending/all/week?api_key=9801b6b0548ad57581d111ea690c85c8&include_adult=false&page=`;
+        } else if (keyword.startsWith('!top-rated-movie') || keyword.startsWith('!topmovie') || keyword.startsWith('!tm')) {
+            baseUrl = `https://api.themoviedb.org/3/movie/top_rated?api_key=9801b6b0548ad57581d111ea690c85c8&include_adult=false&page=`;
+        } else if (keyword.startsWith('!top-rated-tv') || keyword.startsWith('!toptv') || keyword.startsWith('!tt')) {
+            baseUrl = `https://api.themoviedb.org/3/tv/top_rated?api_key=9801b6b0548ad57581d111ea690c85c8&include_adult=false&page=`;
+        } else if (keyword.startsWith('!popular-movie') || keyword.startsWith('!popmovie') || keyword.startsWith('!pm')) {
+            baseUrl = `https://api.themoviedb.org/3/movie/popular?api_key=9801b6b0548ad57581d111ea690c85c8&include_adult=false&page=`;
+        } else if (keyword.startsWith('!popular-tv') || keyword.startsWith('!poptv') || keyword.startsWith('!pt')) {
+            baseUrl = `https://api.themoviedb.org/3/tv/popular?api_key=9801b6b0548ad57581d111ea690c85c8&include_adult=false&page=`;
+        } else if (!keyword.startsWith('!anime')) {
+            baseUrl = `https://api.themoviedb.org/3/search/multi?api_key=9801b6b0548ad57581d111ea690c85c8&query=${encodedKeyword}&include_adult=false&page=`;
+        }
+
+        let dataResults = [];
+
+        if (baseUrl) {
+            // Fetch 5 pages in parallel
+            const pagePromises = Array.from({ length: 5 }, (_, i) =>
+                soraFetch(baseUrl + (i + 1)).then(r => r.json())
+            );
+
+            const pages = await Promise.all(pagePromises);
+
+            // Merge all results
+            dataResults = pages.flatMap(p => p.results || []);
+        }
+
+        if (dataResults.length > 0) {
             transformedResults = transformedResults.concat(
-                data.results.map(result => {
-                    if (result.media_type === "movie" || result.title) {
-                        return {
-                            title: result.title || result.name || result.original_title || result.original_name || "Untitled",
-                            image: result.poster_path ? `https://image.tmdb.org/t/p/w500${result.poster_path}` : "",
-                            href: `movie/${result.id}`
-                        };
-                    } else if (result.media_type === "tv" || result.name) {
-                        return {
-                            title: result.name || result.title || result.original_name || result.original_title || "Untitled",
-                            image: result.poster_path ? `https://image.tmdb.org/t/p/w500${result.poster_path}` : "",
-                            href: `tv/${result.id}/1/1`
-                        };
-                    }
-                })
-                .filter(result => result.title !== "Overflow")
-                .filter(result => result.title !== "My Marriage Partner Is My Student, a Cocky Troublemaker")
+                dataResults
+                    .map(result => {
+                        if (result.media_type === "movie" || result.title) {
+                            return {
+                                title:
+                                    result.title ||
+                                    result.name ||
+                                    result.original_title ||
+                                    result.original_name ||
+                                    "Untitled",
+                                image: result.poster_path
+                                    ? `https://image.tmdb.org/t/p/w500${result.poster_path}`
+                                    : "",
+                                href: `movie/${result.id}`,
+                            };
+                        } else if (result.media_type === "tv" || result.name) {
+                            return {
+                                title:
+                                    result.name ||
+                                    result.title ||
+                                    result.original_name ||
+                                    result.original_title ||
+                                    "Untitled",
+                                image: result.poster_path
+                                    ? `https://image.tmdb.org/t/p/w500${result.poster_path}`
+                                    : "",
+                                href: `tv/${result.id}/1/1`,
+                            };
+                        }
+                    })
+                    .filter(Boolean) // remove undefined
+                    .filter(result => result.title !== "Overflow")
+                    .filter(result => result.title !== "My Marriage Partner Is My Student, a Cocky Troublemaker")
             );
         }
 
-        console.log('Transformed Results: ' + JSON.stringify(transformedResults));
+        console.log("Transformed Results: " + JSON.stringify(transformedResults));
         return JSON.stringify(transformedResults);
-
     } catch (error) {
-        console.log('Fetch error in searchResults: ' + error);
-        return JSON.stringify([{ title: 'Error', image: '', href: '' }]);
+        console.log("Fetch error in searchResults: " + error);
+        return JSON.stringify([{ title: "Error", image: "", href: "" }]);
     }
 }
 
@@ -430,6 +597,8 @@ async function extractEpisodes(url) {
         return JSON.stringify([]);
     }    
 }
+
+searchResults("!trending");
 
 // searchResults("clannad");
 // extractDetails("tv/24835/1/1");
