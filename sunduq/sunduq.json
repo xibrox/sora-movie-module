@@ -6,7 +6,7 @@
         "icon": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/profile.jpg",
         "url": "https://github.com/xibrox"
     },
-    "version": "1.0.20",
+    "version": "1.0.21",
     "language": "English",
     "streamType": "HLS",
     "quality": "1080p",
@@ -14,7 +14,7 @@
     "searchBaseUrl": "https://api.themoviedb.org/3/search/multi?api_key=9801b6b0548ad57581d111ea690c85c8&query=%s&include_adult=false",
     "scriptUrl": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/sunduq/sunduq.js",
     "type": "anime/shows/movies",
-    "downloadSupport": false,
+    "downloadSupport": true,
     "asyncJS": true,
     "softsub": true
 }

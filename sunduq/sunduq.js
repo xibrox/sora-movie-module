@@ -1128,7 +1128,7 @@ async function extractStreamUrl(url) {
                                             : `https://proxy-2.madaraverse.online/proxy?url=${encodeURIComponent(data.sources.url)}`;
 
                                         return {
-                                            title: `${hostTitle} - ${host.toUpperCase()} - ${type.toUpperCase()}`,
+                                            title: `Vidnest - ${hostTitle} - ${host.toUpperCase()} - ${type.toUpperCase()}`,
                                             streamUrl,
                                             headers: { Referer: data.sources?.headers?.Referer || 'https://vidnest.fun/' }
                                         };
@@ -1151,6 +1151,106 @@ async function extractStreamUrl(url) {
             } catch (e) {
                 console.log("Vidnest Anime stream extraction failed silently:", e);
                 return [];
+            }
+        };
+
+        // --- Lunar Anime ---
+        // --- Anime ---
+        const fetchLunarAnime = async () => {
+            try {
+                if (type === 'anime') {
+                    const [anilistId, episodeNumber] = path.split('/');
+                    const types = ['sub', 'dub'];
+
+                    const apiUrl = `https://2ndprovider.lunaranime.ru/vermillion/episodes?id=${anilistId}`;
+                    const response = await soraFetch(apiUrl);
+                    const data = await response.json();
+
+                    const sources = data.data.episodes;
+
+                    let requests = [];
+                    let subtitleUrl = "";
+
+                    for (const source of sources) {
+                        const providerId = source.providerId;
+
+                        const hostTitle = 
+                            providerId === 'miku' ? 'MegaCloud' : 
+                            providerId === 'anya' ? 'MegaCloud' : 
+                            providerId === 'lofi' ? 'StreamUP' : 
+                            providerId === 'wave' ? 'Aniwave' : 
+                            providerId === 'pahe' ? 'Animepahe' : 
+                            providerId === 'kami' ? 'KickAssAnime' :
+                            providerId === 'zone' ? 'AniZone' :
+                            null;
+
+                        if (providerId === "yuki" || providerId === "zone" || providerId === "akane" || providerId === "strix" || providerId === "kami" || providerId === "pahe") {
+                            continue;
+                        }
+
+                        const episode = source.episodes.find(e => e.number === Number(episodeNumber));
+
+                        if (!episode) {
+                            console.warn(`Episode ${episodeNumber} not found for provider ${providerId}`);
+                            continue;
+                        }
+
+                        const buildRequest = (subType) => {
+                            const streamProviderUrl = `https://2ndprovider.lunaranime.ru/vermillion/sources?id=${anilistId}&provider=${providerId}&epId=${episode.id}&epNum=${episode.number}&subType=${subType}`;
+                            return soraFetch(streamProviderUrl)
+                                .then(res => res.json())
+                                .then(data => {
+                                    if (!data?.data?.sources) return null;
+
+                                    // collect subs
+                                    let subs = [];
+                                    if (Array.isArray(data.data.subtitles)) {
+                                        subs = data.data.subtitles;
+                                    } else if (Array.isArray(data.data.tracks)) {
+                                        subs = data.data.tracks;
+                                    }
+
+                                    const found = subs.find(s =>
+                                        typeof (s.url || s.file) === "string" &&
+                                        /\.vtt$/i.test(s.url || s.file) &&
+                                        !/thumbnails\.vtt$/i.test(s.url || s.file) &&
+                                        (s.lang || s.label || "").toLowerCase().includes("english")
+                                    );
+
+                                    if (found) {
+                                        subtitleUrl = found.url || found.file;
+                                    }
+
+                                    return data.data.sources
+                                        .filter(src => src.isM3U8 !== false)
+                                        .map(src => ({
+                                            title: `LUNAR ${hostTitle ? `- ${hostTitle} - ` : ""}${providerId.toUpperCase()} - ${subType.toUpperCase()}${src.quality ? ` - ${src.quality}` : ""}`,
+                                            streamUrl: `https://cluster.lunaranime.ru/api/proxy/hls/custom?url=${src.url}${data.data.headers ? `&referer=${data.data.headers?.Referer}` : ''}`,
+                                            headers: data.data.headers || {}
+                                        }));
+                                })
+                                .catch(() => null);
+                        };
+
+                        if (episode.hasDub) {
+                            for (const t of types) {
+                                requests.push(buildRequest(t));
+                            }
+                        } else {
+                            requests.push(buildRequest("sub"));
+                        }
+                    }
+
+                    const results = await Promise.all(requests);
+                    return {
+                        streams: results.flat().filter(Boolean),
+                        subtitles: subtitleUrl
+                    };
+                }
+                return { streams: [], subtitles: "" };
+            } catch (e) {
+                console.log("Lunar Anime stream extraction failed silently:", e);
+                return { streams: [], subtitles: "" };
             }
         };
 
@@ -1289,6 +1389,7 @@ async function extractStreamUrl(url) {
             // rgShowsStreams,
             vidnestStreams,
             vidnestAnimeResult,
+            lunarAnimeResult,
             vidrockStreams,
             cloudStreamProStreams,
             subtitleUrl
@@ -1300,6 +1401,7 @@ async function extractStreamUrl(url) {
             // fetchRgShows(),
             fetchVidnest(),
             fetchVidnestAnime(),
+            fetchLunarAnime(),
             fetchVidrock(),
             fetchCloudStreamPro(),
             fetchSubtitles()
@@ -1313,11 +1415,14 @@ async function extractStreamUrl(url) {
         // streams.push(...(rgShowsStreams || []));
         streams.push(...(vidnestStreams || []));
         streams.push(...((vidnestAnimeResult?.streams) || []));
+        streams.push(...((lunarAnimeResult?.streams) || []));
         streams.push(...(vidrockStreams || []));
         streams.push(...(cloudStreamProStreams || []));
 
-        if (vidnestAnimeResult?.subtitles?.length) {
+        if (vidnestAnimeResult?.subtitles?.length && vidnestAnimeResult?.subtitles) {
             subtitles = vidnestAnimeResult.subtitles;
+        } else if (lunarAnimeResult?.subtitles?.length && lunarAnimeResult?.subtitles) {
+            subtitles = lunarAnimeResult.subtitles;
         }
 
         if (subtitleUrl) {
