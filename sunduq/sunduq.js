@@ -358,6 +358,12 @@ async function searchResults(keyword) {
             const results = [];
 
             results.push({
+                title: "Use External Player",
+                image: "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/sunduq/UseExternalPlayer.png",
+                href: ""
+            });
+
+            results.push({
                 title: "Narucannon Subbed",
                 image: "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/narucannon/icon.png",
                 href: "https://pixeldrain.net/l/dX3cF5Q3"
