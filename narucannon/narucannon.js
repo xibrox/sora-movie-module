@@ -3,7 +3,7 @@ async function searchResults(keyword) {
 
     results.push({
         title: "Narucannon Subbed",
-        image: "https://lib.ibrachim.cz/streams/narucannon/icon.png",
+        image: "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/narucannon/icon.png",
         href: "https://pixeldrain.net/l/dX3cF5Q3"
     });
     

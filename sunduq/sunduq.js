@@ -344,8 +344,33 @@ async function searchResults(keyword) {
         let aniData = null;
         let transformedResults = [];
 
+        // --- Narucannon ---
+        if (
+            keyword.toLowerCase().startsWith('/n') ||
+            keyword.toLowerCase().startsWith('!n') ||
+            keyword.toLowerCase().startsWith('/naru') ||
+            keyword.toLowerCase().startsWith('!naru') ||
+            keyword.toLowerCase().startsWith('/narucannon') ||
+            keyword.toLowerCase().startsWith('!narucannon') ||
+            keyword.toLowerCase().startsWith('/narucannon') ||
+            keyword.toLowerCase().startsWith('!narucannon')
+        ) {
+            const results = [];
+
+            results.push({
+                title: "Narucannon Subbed",
+                image: "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/narucannon/icon.png",
+                href: "https://pixeldrain.net/l/dX3cF5Q3"
+            });
+            
+            console.log(`Results: ${JSON.stringify(results)}`);
+            return JSON.stringify(results);
+        }
+
         // --- One Pace Section ---
         if (
+            keyword.toLowerCase().startsWith('/o') ||
+            keyword.toLowerCase().startsWith('!o') ||
             keyword.toLowerCase().startsWith('/op') ||
             keyword.toLowerCase().startsWith('!op') ||
             keyword.toLowerCase().startsWith('/one') ||
@@ -443,7 +468,6 @@ async function searchResults(keyword) {
             console.log(`One Pace Results: ${JSON.stringify(results)}`);
             return JSON.stringify(results);
         }
-
 
         // --- AniList Section ---
         if (keyword.startsWith('!anime') || keyword.startsWith('!a') || keyword.startsWith('!')) {
@@ -691,7 +715,7 @@ async function extractEpisodes(url) {
 
             const transformedResults = data.files.map((result, index) => {
                 return {
-                    href: `onepace/${result.id}`,
+                    href: `pixeldrain/${result.id}`,
                     number: index + 1,
                 };
             });
@@ -712,7 +736,7 @@ async function extractEpisodes(url) {
 // searchResults("/op");
 // extractDetails("https://pixeldrain.net/l/VmpS467P");
 // extractEpisodes("https://pixeldrain.net/l/VmpS467P");
-// extractStreamUrl("onepace/3Yuxg9Y9");
+// extractStreamUrl("pixeldrain/3Yuxg9Y9");
 
 // searchResults("clannad");
 // extractDetails("tv/24835/1/1");
@@ -728,7 +752,7 @@ async function extractEpisodes(url) {
 
 async function extractStreamUrl(url) {
     try {
-        const match = url.match(/^(movie|tv|anime|onepace)\/([^?#]+)/);
+        const match = url.match(/^(movie|tv|anime|pixeldrain)\/([^?#]+)/);
         if (!match) throw new Error('Invalid URL format');
         const [, type, path] = match;
 
@@ -1550,9 +1574,9 @@ async function extractStreamUrl(url) {
             } else if (lunarAnimeResult?.subtitles?.length && lunarAnimeResult?.subtitles) {
                 subtitles = lunarAnimeResult.subtitles;
             }
-        } else if (type === 'onepace') {
+        } else if (type === 'pixeldrain') {
             streams.push({ 
-                title: "OnePace", 
+                title: "PixelDrain", 
                 streamUrl: `https://pixeldrain.net/api/file/${path}?download`, 
                 headers: {
                     'Referer': 'https://pixeldrain.net/',
