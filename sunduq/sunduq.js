@@ -359,7 +359,7 @@ async function searchResults(keyword) {
 
             // Extract filter term after the command
             const parts = keyword.split(" ");
-            let filter = parts.slice(1).join(" ").toLowerCase(); // everything after "-op"
+            let filter = parts.slice(1).join(" ").toLowerCase(); // everything after "/op"
             if (!filter) filter = ""; // default empty
 
             // images + arcSections same as before...
@@ -712,7 +712,7 @@ async function extractEpisodes(url) {
 // searchResults("/op");
 // extractDetails("https://pixeldrain.net/l/VmpS467P");
 // extractEpisodes("https://pixeldrain.net/l/VmpS467P");
-extractStreamUrl("onepace/3Yuxg9Y9");
+// extractStreamUrl("onepace/3Yuxg9Y9");
 
 // searchResults("clannad");
 // extractDetails("tv/24835/1/1");
