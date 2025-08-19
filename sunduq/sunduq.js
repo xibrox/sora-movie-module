@@ -351,8 +351,6 @@ async function searchResults(keyword) {
             keyword.toLowerCase().startsWith('/naru') ||
             keyword.toLowerCase().startsWith('!naru') ||
             keyword.toLowerCase().startsWith('/narucannon') ||
-            keyword.toLowerCase().startsWith('!narucannon') ||
-            keyword.toLowerCase().startsWith('/narucannon') ||
             keyword.toLowerCase().startsWith('!narucannon')
         ) {
             const results = [];
