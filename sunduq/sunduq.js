@@ -342,8 +342,110 @@ function sleep(ms) {
 async function searchResults(keyword) {
     try {
         let aniData = null;
+        let transformedResults = [];
 
-        // --- AniList Search ---
+        // --- One Pace Section ---
+        if (
+            keyword.toLowerCase().startsWith('/op') ||
+            keyword.toLowerCase().startsWith('!op') ||
+            keyword.toLowerCase().startsWith('/one') ||
+            keyword.toLowerCase().startsWith('!one') ||
+            keyword.toLowerCase().startsWith('/onepace') ||
+            keyword.toLowerCase().startsWith('!onepace')
+        ) {
+            const results = [];
+            const response = await soraFetch(`https://onepace.net/en/watch`);
+            const html = await response.text();
+
+            // Extract filter term after the command
+            const parts = keyword.split(" ");
+            let filter = parts.slice(1).join(" ").toLowerCase(); // everything after "-op"
+            if (!filter) filter = ""; // default empty
+
+            // images + arcSections same as before...
+            const allImages = [...html.matchAll(/<img[^>]+src=["']([^"']+)["'][^>]*>/g)].map(m => m[1])
+                .concat([...html.matchAll(/background-image:\s*url\(['"]([^'"]+)['"]\)/g)].map(m => m[1]));
+            const arcSections = html.split('<h2');
+
+            for (let i = 1; i < arcSections.length; i++) {
+                const currentSection = arcSections[i];
+                const titleMatch = currentSection.match(/>([^<]+)<\/a>/);
+                if (!titleMatch) continue;
+                let arcTitle = titleMatch[1].trim()
+                    .replace(/&#x27;/g, "'")
+                    .replace(/&amp;/g, '&')
+                    .replace(/&quot;/g, '"');
+
+                let arcImage = '';
+                if (allImages[i]) {
+                    arcImage = allImages[i].replace(/&amp;/g, '&');
+                    if (arcImage.startsWith('/_next')) {
+                        arcImage = 'https://onepace.net' + arcImage;
+                    }
+                }
+                if (i === arcSections.length - 1 && allImages[0]) {
+                    arcImage = allImages[0].replace(/&amp;/g, '&');
+                    if (arcImage.startsWith('/_next')) {
+                        arcImage = 'https://onepace.net' + arcImage;
+                    }
+                }
+
+                const episodeBlocks = currentSection.split('<span class="flex-1">');
+                for (let j = 1; j < episodeBlocks.length; j++) {
+                    const block = episodeBlocks[j];
+                    
+                    let type = '';
+                    if (block.includes('English Subtitles')) {
+                        type = 'English Subtitles';
+                        if (block.includes('Extended')) type += ', Extended';
+                        if (block.includes('Alternate')) type += ', Alternate';
+                    } else if (block.includes('English Dub with Closed Captions')) {
+                        type = 'English Dub with Closed Captions';
+                        if (block.includes('Extended')) type += ', Extended';
+                        if (block.includes('Alternate')) type += ', Alternate';
+                    } else if (block.includes('English Dub')) {
+                        type = 'English Dub';
+                        if (block.includes('Extended')) type += ', Extended';
+                        if (block.includes('Alternate')) type += ', Alternate';
+                    } else {
+                        continue;
+                    }
+
+                    const qualityMatches = [...block.matchAll(/>\s*(480p|720p|1080p)\s*</g)];
+                    const linkMatches = [...block.matchAll(/href="(https:\/\/pixeldrain\.net\/l\/[^"]+)"/g)];
+
+                    const qualityLinks = new Map();
+                    if (qualityMatches.length > 0 && linkMatches.length > 0) {
+                        const uniqueQualities = [...new Set(qualityMatches.map(m => m[1]))];
+                        uniqueQualities.forEach((quality, index) => {
+                            if (index < linkMatches.length) {
+                                qualityLinks.set(quality, linkMatches[index][1]);
+                            }
+                        });
+                    }
+
+                    for (const [quality, href] of qualityLinks) {
+                        const title = `${arcTitle}, ${type}, ${quality.trim()}`;
+                        const titleLower = title.toLowerCase();
+
+                        if (
+                            !filter || 
+                            filter === 'all' || 
+                            filter === 'everything' || 
+                            titleLower.includes(filter)
+                        ) {
+                            results.push({ title, href, image: arcImage });
+                        }
+                    }
+                }
+            }
+
+            console.log(`One Pace Results: ${JSON.stringify(results)}`);
+            return JSON.stringify(results);
+        }
+
+
+        // --- AniList Section ---
         if (keyword.startsWith('!anime') || keyword.startsWith('!a') || keyword.startsWith('!')) {
             aniData = await Anilist.getLatest({ isAdult: false });
         } else if (
@@ -356,20 +458,10 @@ async function searchResults(keyword) {
             aniData = await Anilist.search(keyword, { isAdult: false });
         }
 
-        let transformedResults = [];
-
         if (aniData?.Page?.media?.length > 0) {
             transformedResults = aniData.Page.media.map(result => ({
-                title:
-                    result.title.english ||
-                    result.title.romaji ||
-                    result.title.native ||
-                    "Untitled",
-                image:
-                    result.coverImage.extraLarge ||
-                    result.coverImage.large ||
-                    result.coverImage.medium ||
-                    "",
+                title: result.title.english || result.title.romaji || result.title.native || "Untitled",
+                image: result.coverImage.extraLarge || result.coverImage.large || result.coverImage.medium || "",
                 href: `anime/${result.id}`,
             }));
         }
@@ -395,14 +487,10 @@ async function searchResults(keyword) {
         let dataResults = [];
 
         if (baseUrl) {
-            // Fetch 5 pages in parallel
             const pagePromises = Array.from({ length: 5 }, (_, i) =>
                 soraFetch(baseUrl + (i + 1)).then(r => r.json())
             );
-
             const pages = await Promise.all(pagePromises);
-
-            // Merge all results
             dataResults = pages.flatMap(p => p.results || []);
         }
 
@@ -412,33 +500,19 @@ async function searchResults(keyword) {
                     .map(result => {
                         if (result.media_type === "movie" || result.title) {
                             return {
-                                title:
-                                    result.title ||
-                                    result.name ||
-                                    result.original_title ||
-                                    result.original_name ||
-                                    "Untitled",
-                                image: result.poster_path
-                                    ? `https://image.tmdb.org/t/p/w500${result.poster_path}`
-                                    : "",
+                                title: result.title || result.name || result.original_title || result.original_name || "Untitled",
+                                image: result.poster_path ? `https://image.tmdb.org/t/p/w500${result.poster_path}` : "",
                                 href: `movie/${result.id}`,
                             };
                         } else if (result.media_type === "tv" || result.name) {
                             return {
-                                title:
-                                    result.name ||
-                                    result.title ||
-                                    result.original_name ||
-                                    result.original_title ||
-                                    "Untitled",
-                                image: result.poster_path
-                                    ? `https://image.tmdb.org/t/p/w500${result.poster_path}`
-                                    : "",
+                                title: result.name || result.title || result.original_name || result.original_title || "Untitled",
+                                image: result.poster_path ? `https://image.tmdb.org/t/p/w500${result.poster_path}` : "",
                                 href: `tv/${result.id}/1/1`,
                             };
                         }
                     })
-                    .filter(Boolean) // remove undefined
+                    .filter(Boolean)
                     .filter(result => result.title !== "Overflow")
                     .filter(result => result.title !== "My Marriage Partner Is My Student, a Cocky Troublemaker")
             );
@@ -505,6 +579,23 @@ async function extractDetails(url) {
             }];
 
             console.log(JSON.stringify(transformedResults));
+            return JSON.stringify(transformedResults);
+        } else if (url.includes('pixeldrain')) {
+            const match = url.match(/https:\/\/pixeldrain\.net\/l\/([^\/]+)/);
+            if (!match) throw new Error("Invalid URL format");
+                    
+            const arcId = match[1];
+
+            const response = await soraFetch(`https://pixeldrain.net/api/list/${arcId}`);
+            const data = await response.json();    
+
+            const transformedResults = [{
+                description: `Title: ${data.title}\nFile Count: ${data.file_count}`,
+                aliases: `Title: ${data.title}\nFile Count: ${data.file_count}`,
+                airdate: ''
+            }];
+
+            console.log(`Details: ${JSON.stringify(transformedResults)}`);
             return JSON.stringify(transformedResults);
         } else {
             throw new Error("Invalid URL format");
@@ -589,6 +680,24 @@ async function extractEpisodes(url) {
 
             console.log(episodesArray);
             return JSON.stringify(episodesArray);
+        } else if (url.includes('pixeldrain')) {
+            const match = url.match(/https:\/\/pixeldrain\.net\/l\/([^\/]+)/);
+            if (!match) throw new Error("Invalid URL format");
+                    
+            const arcId = match[1];
+
+            const response = await soraFetch(`https://pixeldrain.net/api/list/${arcId}`);
+            const data = await response.json();
+
+            const transformedResults = data.files.map((result, index) => {
+                return {
+                    href: `onepace/${result.id}`,
+                    number: index + 1,
+                };
+            });
+
+            console.log(`Episodes: ${JSON.stringify(transformedResults)}`);
+            return JSON.stringify(transformedResults);
         } else {
             throw new Error("Invalid URL format");
         }
@@ -599,6 +708,11 @@ async function extractEpisodes(url) {
 }
 
 // searchResults("!trending");
+
+// searchResults("/op");
+// extractDetails("https://pixeldrain.net/l/VmpS467P");
+// extractEpisodes("https://pixeldrain.net/l/VmpS467P");
+extractStreamUrl("onepace/3Yuxg9Y9");
 
 // searchResults("clannad");
 // extractDetails("tv/24835/1/1");
@@ -614,346 +728,307 @@ async function extractEpisodes(url) {
 
 async function extractStreamUrl(url) {
     try {
-        const match = url.match(/(movie|tv|anime)\/(.+)/);
+        const match = url.match(/^(movie|tv|anime|onepace)\/([^?#]+)/);
         if (!match) throw new Error('Invalid URL format');
         const [, type, path] = match;
 
         let streams = [];
         let subtitles = "";
 
-        // --- Vidzee fetch (parallel 5 servers) ---
-        const fetchVidzee = async () => {
-            const vidzeePromises = Array.from({ length: 5 }, (_, i) => {
-                const sr = i + 1;
-                let apiUrl;
+        if (type === 'movie' || type === 'tv') {
+            // --- Vidzee fetch (parallel 5 servers) ---
+            const fetchVidzee = async () => {
+                const vidzeePromises = Array.from({ length: 5 }, (_, i) => {
+                    const sr = i + 1;
+                    let apiUrl;
 
+                    if (type === 'movie') {
+                        apiUrl = `https://player.vidzee.wtf/api/server?id=${path}&sr=${sr}`;
+                    } else if (type === 'tv') {
+                        const [showId, seasonNumber, episodeNumber] = path.split('/');
+                        apiUrl = `https://player.vidzee.wtf/api/server?id=${showId}&sr=${sr}&ss=${seasonNumber}&ep=${episodeNumber}`;
+                    } else {
+                        return null;
+                    }
+
+                    return soraFetch(apiUrl)
+                        .then(res => res.json())
+                        .then(data => {
+                            if (!data.url) return null;
+                            const stream = data.url.find(source =>
+                                source.lang?.toLowerCase() === 'english'
+                            );
+                            if (!stream) return null;
+
+                            return {
+                                title: `Vidzee - ${data.provider}`,
+                                streamUrl: stream.link,
+                                headers: {
+                                    'Origin': 'https://player.vidzee.wtf',
+                                    'Referer': data.headers?.Referer || ''
+                                }
+                            };
+                        })
+                        .catch(() => null);
+                });
+
+                const results = await Promise.allSettled(vidzeePromises);
+                return results
+                    .filter(r => r.status === 'fulfilled' && r.value)
+                    .map(r => r.value);
+            };
+
+            // --- XPrime fetches ---
+            const fetchXPrime = async () => {
+                const xprimeStreams = [];
+                const xprimeBaseUrl = 'https://xprime.tv/watch';
+                const xprimeServers = [
+                    'primebox', 'phoenix', 'primenet', 'kraken', 'harbour', 'volkswagen', 'fendi'
+                ];
+
+                let xprimeMetadata;
                 if (type === 'movie') {
-                    apiUrl = `https://player.vidzee.wtf/api/server?id=${path}&sr=${sr}`;
-                } else if (type === 'tv') {
-                    const [showId, seasonNumber, episodeNumber] = path.split('/');
-                    apiUrl = `https://player.vidzee.wtf/api/server?id=${showId}&sr=${sr}&ss=${seasonNumber}&ep=${episodeNumber}`;
-                } else {
-                    return null;
-                }
+                    const metadataRes = await soraFetch(`https://api.themoviedb.org/3/movie/${path}?api_key=84259f99204eeb7d45c7e3d8e36c6123`);
+                    xprimeMetadata = await metadataRes.json();
 
-                return soraFetch(apiUrl)
-                    .then(res => res.json())
-                    .then(data => {
-                        if (!data.url) return null;
-                        const stream = data.url.find(source =>
-                            source.lang?.toLowerCase() === 'english'
+                    for (const server of xprimeServers) {
+                        let apiUrl = '';
+                        const name = xprimeMetadata.title || xprimeMetadata.name || xprimeMetadata.original_title || xprimeMetadata.original_name || '';
+
+                        if (server === xprimeServers[0]) {
+                            if (xprimeMetadata.release_date) {
+                                apiUrl = `https://backend.xprime.tv/${server}?name=${encodeURIComponent(name)}&fallback_year=${xprimeMetadata.release_date.split('-')[0]}`;
+                            } else {
+                                apiUrl = `https://backend.xprime.tv/${server}?name=${encodeURIComponent(name)}`;
+                            }
+                        } else {
+                            if (xprimeMetadata.release_date) {
+                                apiUrl = `https://backend.xprime.tv/${server}?name=${encodeURIComponent(name)}&year=${xprimeMetadata.release_date.split('-')[0]}&id=${path}&imdb=${xprimeMetadata.imdb_id || ''}`;
+                            } else {
+                                apiUrl = `https://backend.xprime.tv/${server}?name=${encodeURIComponent(name)}&id=${path}&imdb=${xprimeMetadata.imdb_id || ''}`;
+                            }
+                        }
+
+                        xprimeStreams.push(
+                            soraFetch(apiUrl)
+                                .then(res => res.json())
+                                .then(data => {
+                                    if (server === 'volkswagen' && data?.url) {
+                                        return {
+                                            title: `XPrime - ${server} (German)`,
+                                            streamUrl: data.url,
+                                            headers: { Referer: "https://xprime.tv/" }
+                                        };
+                                    } else if (server === 'fendi' && data?.url) {
+                                        if (data?.subtitles?.length) {
+                                            const engSub = data.subtitles.find(sub => sub.language === 'eng' && (sub.name === 'English' || sub.name === 'English [CC]'));
+                                            if (engSub) {
+                                                subtitles = engSub.url;
+                                            }
+                                        }
+                                        return {
+                                            title: `XPrime - ${server} (Italian)`,
+                                            streamUrl: data.url,
+                                            headers: { Referer: "https://xprime.tv/" }
+                                        };
+                                    } else if (data?.url) {
+                                        if (data?.subtitle) subtitles = data.subtitle;
+                                        return {
+                                            title: `XPrime - ${server}`,
+                                            streamUrl: data.url,
+                                            headers: { Referer: "https://xprime.tv/" }
+                                        };
+                                    }
+                                    return null;
+                                })
+                                .catch(() => null)
                         );
-                        if (!stream) return null;
-
-                        return {
-                            title: `Vidzee - ${data.provider}`,
-                            streamUrl: stream.link,
-                            headers: {
-                                'Origin': 'https://player.vidzee.wtf',
-                                'Referer': data.headers?.Referer || ''
-                            }
-                        };
-                    })
-                    .catch(() => null);
-            });
-
-            const results = await Promise.allSettled(vidzeePromises);
-            return results
-                .filter(r => r.status === 'fulfilled' && r.value)
-                .map(r => r.value);
-        };
-
-        // --- XPrime fetches ---
-        const fetchXPrime = async () => {
-            const xprimeStreams = [];
-            const xprimeBaseUrl = 'https://xprime.tv/watch';
-            const xprimeServers = [
-                'primebox', 'phoenix', 'primenet', 'kraken', 'harbour', 'volkswagen', 'fendi'
-            ];
-
-            let xprimeMetadata;
-            if (type === 'movie') {
-                const metadataRes = await soraFetch(`https://api.themoviedb.org/3/movie/${path}?api_key=84259f99204eeb7d45c7e3d8e36c6123`);
-                xprimeMetadata = await metadataRes.json();
-
-                for (const server of xprimeServers) {
-                    let apiUrl = '';
-                    const name = xprimeMetadata.title || xprimeMetadata.name || xprimeMetadata.original_title || xprimeMetadata.original_name || '';
-
-                    if (server === xprimeServers[0]) {
-                        if (xprimeMetadata.release_date) {
-                            apiUrl = `https://backend.xprime.tv/${server}?name=${encodeURIComponent(name)}&fallback_year=${xprimeMetadata.release_date.split('-')[0]}`;
-                        } else {
-                            apiUrl = `https://backend.xprime.tv/${server}?name=${encodeURIComponent(name)}`;
-                        }
-                    } else {
-                        if (xprimeMetadata.release_date) {
-                            apiUrl = `https://backend.xprime.tv/${server}?name=${encodeURIComponent(name)}&year=${xprimeMetadata.release_date.split('-')[0]}&id=${path}&imdb=${xprimeMetadata.imdb_id || ''}`;
-                        } else {
-                            apiUrl = `https://backend.xprime.tv/${server}?name=${encodeURIComponent(name)}&id=${path}&imdb=${xprimeMetadata.imdb_id || ''}`;
-                        }
                     }
-
-                    xprimeStreams.push(
-                        soraFetch(apiUrl)
-                            .then(res => res.json())
-                            .then(data => {
-                                if (server === 'volkswagen' && data?.url) {
-                                    return {
-                                        title: `XPrime - ${server} (German)`,
-                                        streamUrl: data.url,
-                                        headers: { Referer: "https://xprime.tv/" }
-                                    };
-                                } else if (server === 'fendi' && data?.url) {
-                                    if (data?.subtitles?.length) {
-                                        const engSub = data.subtitles.find(sub => sub.language === 'eng' && (sub.name === 'English' || sub.name === 'English [CC]'));
-                                        if (engSub) {
-                                            subtitles = engSub.url;
-                                        }
-                                    }
-                                    return {
-                                        title: `XPrime - ${server} (Italian)`,
-                                        streamUrl: data.url,
-                                        headers: { Referer: "https://xprime.tv/" }
-                                    };
-                                } else if (data?.url) {
-                                    if (data?.subtitle) subtitles = data.subtitle;
-                                    return {
-                                        title: `XPrime - ${server}`,
-                                        streamUrl: data.url,
-                                        headers: { Referer: "https://xprime.tv/" }
-                                    };
-                                }
-                                return null;
-                            })
-                            .catch(() => null)
-                    );
-                }
-            } else if (type === 'tv') {
-                const [showId, season, episode] = path.split('/');
-                const metadataRes = await soraFetch(`https://api.themoviedb.org/3/tv/${showId}?api_key=84259f99204eeb7d45c7e3d8e36c6123`);
-                xprimeMetadata = await metadataRes.json();
-
-                for (const server of xprimeServers) {
-                    let apiUrl = '';
-                    const name = xprimeMetadata.title || xprimeMetadata.name || xprimeMetadata.original_title || xprimeMetadata.original_name || '';
-
-                    if (server === xprimeServers[0]) {
-                        if (xprimeMetadata.first_air_date) {
-                            apiUrl = `https://backend.xprime.tv/${server}?name=${encodeURIComponent(name)}&fallback_year=${xprimeMetadata.first_air_date.split('-')[0]}&season=${season}&episode=${episode}`;
-                        } else {
-                            apiUrl = `https://backend.xprime.tv/${server}?name=${encodeURIComponent(name)}&season=${season}&episode=${episode}`;
-                        }
-                    } else {
-                        if (xprimeMetadata.first_air_date) {
-                            apiUrl = `https://backend.xprime.tv/${server}?name=${encodeURIComponent(name)}&year=${xprimeMetadata.first_air_date.split('-')[0]}&id=${showId}&imdb=${xprimeMetadata.imdb_id || ''}&season=${season}&episode=${episode}`;
-                        } else {
-                            apiUrl = `https://backend.xprime.tv/${server}?name=${encodeURIComponent(name)}&id=${showId}&imdb=${xprimeMetadata.imdb_id || ''}&season=${season}&episode=${episode}`;
-                        }
-                    }
-
-                    xprimeStreams.push(
-                        soraFetch(apiUrl)
-                            .then(res => res.json())
-                            .then(data => {
-                                if (server === 'volkswagen' && data?.url) {
-                                    return {
-                                        title: `XPrime - ${server} (German)`,
-                                        streamUrl: data.url,
-                                        headers: { Referer: "https://xprime.tv/" }
-                                    };
-                                } else if (server === 'fendi' && data?.url) {
-                                    if (data?.subtitles?.length) {
-                                        const engSub = data.subtitles.find(sub => sub.language === 'eng' && (sub.name === 'English' || sub.name === 'English [CC]'));
-                                        if (engSub) {
-                                            subtitles = engSub.url;
-                                        }
-                                    }
-                                    return {
-                                        title: `XPrime - ${server} (Italian)`,
-                                        streamUrl: data.url,
-                                        headers: { Referer: "https://xprime.tv/" }
-                                    };
-                                } else if (data?.url) {
-                                    if (data?.subtitle) subtitles = data.subtitle;
-                                    return {
-                                        title: `XPrime - ${server}`,
-                                        streamUrl: data.url,
-                                        headers: { Referer: "https://xprime.tv/" }
-                                    };
-                                }
-                                return null;
-                            })
-                            .catch(() => null)
-                    );
-                }
-            }
-
-            const settledResults = await Promise.allSettled(xprimeStreams);
-            return settledResults
-                .filter(r => r.status === 'fulfilled' && r.value)
-                .map(r => r.value);
-        };
-
-        // --- VixSrc fetch ---
-        const fetchVixSrc = async () => {
-            try {
-                let vixsrcUrl;
-
-                if (type === 'movie') {
-                    vixsrcUrl = `https://vixsrc.to/movie/${path}`;
                 } else if (type === 'tv') {
-                    const [showId, seasonNumber, episodeNumber] = path.split('/');
-                    vixsrcUrl = `https://vixsrc.to/tv/${showId}/${seasonNumber}/${episodeNumber}`;
-                } else {
-                    return null;
-                }
+                    const [showId, season, episode] = path.split('/');
+                    const metadataRes = await soraFetch(`https://api.themoviedb.org/3/tv/${showId}?api_key=84259f99204eeb7d45c7e3d8e36c6123`);
+                    xprimeMetadata = await metadataRes.json();
 
-                const html = await soraFetch(vixsrcUrl).then(res => res.text());
+                    for (const server of xprimeServers) {
+                        let apiUrl = '';
+                        const name = xprimeMetadata.title || xprimeMetadata.name || xprimeMetadata.original_title || xprimeMetadata.original_name || '';
 
-                let vixStreams = [];
+                        if (server === xprimeServers[0]) {
+                            if (xprimeMetadata.first_air_date) {
+                                apiUrl = `https://backend.xprime.tv/${server}?name=${encodeURIComponent(name)}&fallback_year=${xprimeMetadata.first_air_date.split('-')[0]}&season=${season}&episode=${episode}`;
+                            } else {
+                                apiUrl = `https://backend.xprime.tv/${server}?name=${encodeURIComponent(name)}&season=${season}&episode=${episode}`;
+                            }
+                        } else {
+                            if (xprimeMetadata.first_air_date) {
+                                apiUrl = `https://backend.xprime.tv/${server}?name=${encodeURIComponent(name)}&year=${xprimeMetadata.first_air_date.split('-')[0]}&id=${showId}&imdb=${xprimeMetadata.imdb_id || ''}&season=${season}&episode=${episode}`;
+                            } else {
+                                apiUrl = `https://backend.xprime.tv/${server}?name=${encodeURIComponent(name)}&id=${showId}&imdb=${xprimeMetadata.imdb_id || ''}&season=${season}&episode=${episode}`;
+                            }
+                        }
 
-                if (html.includes('window.masterPlaylist')) {
-                    const urlMatch = html.match(/url:\s*['"]([^'"]+)['"]/);
-                    const tokenMatch = html.match(/['"]?token['"]?\s*:\s*['"]([^'"]+)['"]/);
-                    const expiresMatch = html.match(/['"]?expires['"]?\s*:\s*['"]([^'"]+)['"]/);
-
-                    if (urlMatch && tokenMatch && expiresMatch) {
-                        const baseUrl = urlMatch[1];
-                        const token = tokenMatch[1];
-                        const expires = expiresMatch[1];
-
-                        const streamUrl = baseUrl.includes('?b=1')
-                            ? `${baseUrl}&token=${token}&expires=${expires}&h=1&lang=en`
-                            : `${baseUrl}?token=${token}&expires=${expires}&h=1&lang=en`;
-
-                        vixStreams.push({
-                            title: `VixSrc`,
-                            streamUrl,
-                            headers: { Referer: "https://vixsrc.to/" }
-                        });
+                        xprimeStreams.push(
+                            soraFetch(apiUrl)
+                                .then(res => res.json())
+                                .then(data => {
+                                    if (server === 'volkswagen' && data?.url) {
+                                        return {
+                                            title: `XPrime - ${server} (German)`,
+                                            streamUrl: data.url,
+                                            headers: { Referer: "https://xprime.tv/" }
+                                        };
+                                    } else if (server === 'fendi' && data?.url) {
+                                        if (data?.subtitles?.length) {
+                                            const engSub = data.subtitles.find(sub => sub.language === 'eng' && (sub.name === 'English' || sub.name === 'English [CC]'));
+                                            if (engSub) {
+                                                subtitles = engSub.url;
+                                            }
+                                        }
+                                        return {
+                                            title: `XPrime - ${server} (Italian)`,
+                                            streamUrl: data.url,
+                                            headers: { Referer: "https://xprime.tv/" }
+                                        };
+                                    } else if (data?.url) {
+                                        if (data?.subtitle) subtitles = data.subtitle;
+                                        return {
+                                            title: `XPrime - ${server}`,
+                                            streamUrl: data.url,
+                                            headers: { Referer: "https://xprime.tv/" }
+                                        };
+                                    }
+                                    return null;
+                                })
+                                .catch(() => null)
+                        );
                     }
                 }
 
-                if (!vixStreams.length) {
-                    const m3u8Match = html.match(/(https?:\/\/[^'"\s]+\.m3u8[^'"\s]*)/);
-                    if (m3u8Match) {
-                        vixStreams.push({
-                            title: `VixSrc`,
-                            streamUrl: m3u8Match[1],
-                            headers: { Referer: "https://vixsrc.to/" }
-                        });
-                    }
-                }
+                const settledResults = await Promise.allSettled(xprimeStreams);
+                return settledResults
+                    .filter(r => r.status === 'fulfilled' && r.value)
+                    .map(r => r.value);
+            };
 
-                if (!vixStreams.length) {
-                    const scriptMatches = html.match(/<script[^>]*>(.*?)<\/script>/gs);
-                    if (scriptMatches) {
-                        for (const script of scriptMatches) {
-                            const streamMatch = script.match(/['"]?(https?:\/\/[^'"\s]+(?:\.m3u8|playlist)[^'"\s]*)/);
-                            if (streamMatch) {
-                                vixStreams.push({
-                                    title: `VixSrc`,
-                                    streamUrl: streamMatch[1],
-                                    headers: { Referer: "https://vixsrc.to/" }
-                                });
-                                break;
+            // --- VixSrc fetch ---
+            const fetchVixSrc = async () => {
+                try {
+                    let vixsrcUrl;
+
+                    if (type === 'movie') {
+                        vixsrcUrl = `https://vixsrc.to/movie/${path}`;
+                    } else if (type === 'tv') {
+                        const [showId, seasonNumber, episodeNumber] = path.split('/');
+                        vixsrcUrl = `https://vixsrc.to/tv/${showId}/${seasonNumber}/${episodeNumber}`;
+                    } else {
+                        return null;
+                    }
+
+                    const html = await soraFetch(vixsrcUrl).then(res => res.text());
+
+                    let vixStreams = [];
+
+                    if (html.includes('window.masterPlaylist')) {
+                        const urlMatch = html.match(/url:\s*['"]([^'"]+)['"]/);
+                        const tokenMatch = html.match(/['"]?token['"]?\s*:\s*['"]([^'"]+)['"]/);
+                        const expiresMatch = html.match(/['"]?expires['"]?\s*:\s*['"]([^'"]+)['"]/);
+
+                        if (urlMatch && tokenMatch && expiresMatch) {
+                            const baseUrl = urlMatch[1];
+                            const token = tokenMatch[1];
+                            const expires = expiresMatch[1];
+
+                            const streamUrl = baseUrl.includes('?b=1')
+                                ? `${baseUrl}&token=${token}&expires=${expires}&h=1&lang=en`
+                                : `${baseUrl}?token=${token}&expires=${expires}&h=1&lang=en`;
+
+                            vixStreams.push({
+                                title: `VixSrc`,
+                                streamUrl,
+                                headers: { Referer: "https://vixsrc.to/" }
+                            });
+                        }
+                    }
+
+                    if (!vixStreams.length) {
+                        const m3u8Match = html.match(/(https?:\/\/[^'"\s]+\.m3u8[^'"\s]*)/);
+                        if (m3u8Match) {
+                            vixStreams.push({
+                                title: `VixSrc`,
+                                streamUrl: m3u8Match[1],
+                                headers: { Referer: "https://vixsrc.to/" }
+                            });
+                        }
+                    }
+
+                    if (!vixStreams.length) {
+                        const scriptMatches = html.match(/<script[^>]*>(.*?)<\/script>/gs);
+                        if (scriptMatches) {
+                            for (const script of scriptMatches) {
+                                const streamMatch = script.match(/['"]?(https?:\/\/[^'"\s]+(?:\.m3u8|playlist)[^'"\s]*)/);
+                                if (streamMatch) {
+                                    vixStreams.push({
+                                        title: `VixSrc`,
+                                        streamUrl: streamMatch[1],
+                                        headers: { Referer: "https://vixsrc.to/" }
+                                    });
+                                    break;
+                                }
                             }
                         }
                     }
-                }
 
-                if (!vixStreams.length) {
-                    const videoMatch = html.match(/(?:src|source|url)['"]?\s*[:=]\s*['"]?(https?:\/\/[^'"\s]+(?:\.mp4|\.m3u8|\.mpd)[^'"\s]*)/);
-                    if (videoMatch) {
-                        vixStreams.push({
-                            title: `VixSrc`,
-                            streamUrl: videoMatch[2] || videoMatch[1],
-                            headers: { Referer: "https://vixsrc.to/" }
-                        });
+                    if (!vixStreams.length) {
+                        const videoMatch = html.match(/(?:src|source|url)['"]?\s*[:=]\s*['"]?(https?:\/\/[^'"\s]+(?:\.mp4|\.m3u8|\.mpd)[^'"\s]*)/);
+                        if (videoMatch) {
+                            vixStreams.push({
+                                title: `VixSrc`,
+                                streamUrl: videoMatch[2] || videoMatch[1],
+                                headers: { Referer: "https://vixsrc.to/" }
+                            });
+                        }
                     }
-                }
 
-                return vixStreams;
-            } catch {
-                console.log('VixSrc failed silently');
-                return [];
-            }
-        };
-
-        // --- Vidapi fetch ---
-        const fetchVidapi = async () => {
-            try {
-                let vidapiUrl;
-
-                if (type === 'movie') {
-                    vidapiUrl = `https://vidapi.xyz/embed/movie/${path}`;
-                } else if (type === 'tv') {
-                    const [showId, seasonNumber, episodeNumber] = path.split('/');
-                    vidapiUrl = `https://vidapi.xyz/embed/tv/${showId}&s=${seasonNumber}&e=${episodeNumber}`;
-                } else {
+                    return vixStreams;
+                } catch {
+                    console.log('VixSrc failed silently');
                     return [];
                 }
+            };
 
-                const headers = { 'Referer': 'https://vidapi.xyz/' };
-                const html = await soraFetch(vidapiUrl, { headers }).then(res => res.text());
+            // --- Vidapi fetch ---
+            const fetchVidapi = async () => {
+                try {
+                    let vidapiUrl;
 
-                const iframeMatch = html.match(/<iframe[^>]+src=["']([^"']+)["']/);
-                if (!iframeMatch) return [];
-
-                let iframeSrc = iframeMatch[1].trim();
-                if (!iframeSrc.startsWith("http")) {
-                    iframeSrc = "https://uqloads.xyz/e/" + iframeSrc;
-                }
-
-                let allStreams = [];
-
-                // --- uqloads.xyz direct ---
-                if (iframeSrc.includes("uqloads.xyz")) {
-                    const iframeHtml = await soraFetch(iframeSrc, { headers }).then(res => res.text());
-
-                    const packedScriptMatch = iframeHtml.match(/(eval\(function\(p,a,c,k,e,d[\s\S]*?)<\/script>/);
-                    if (packedScriptMatch) {
-                        const unpackedScript = unpack(packedScriptMatch[1]);
-
-                        const streamRegex = /"hls[1-9]":\s*"([^"]+)"/g;
-                        let match;
-                        while ((match = streamRegex.exec(unpackedScript)) !== null) {
-                            const streamUrl = match[1].trim();
-                            if (streamUrl.startsWith("https://") && (streamUrl.includes(".m3u8") || streamUrl.includes(".mp4"))) {
-                                allStreams.push(streamUrl);
-                            }
-                        }
+                    if (type === 'movie') {
+                        vidapiUrl = `https://vidapi.xyz/embed/movie/${path}`;
+                    } else if (type === 'tv') {
+                        const [showId, seasonNumber, episodeNumber] = path.split('/');
+                        vidapiUrl = `https://vidapi.xyz/embed/tv/${showId}&s=${seasonNumber}&e=${episodeNumber}`;
+                    } else {
+                        return [];
                     }
-                }
 
-                // --- player4u.xyz multi-res ---
-                else if (iframeSrc.includes("player4u.xyz")) {
-                    const playerHtml = await soraFetch(iframeSrc, { headers }).then(res => res.text());
+                    const headers = { 'Referer': 'https://vidapi.xyz/' };
+                    const html = await soraFetch(vidapiUrl, { headers }).then(res => res.text());
 
-                    const liRegex = /<li class="slide-toggle">([\s\S]*?)<\/li>/g;
-                    let liMatch;
-                    while ((liMatch = liRegex.exec(playerHtml)) !== null) {
-                        const liContent = liMatch[1];
-                        const urlMatch = liContent.match(/onclick="go\('([^']+)'\)"/);
-                        if (!urlMatch) continue;
+                    const iframeMatch = html.match(/<iframe[^>]+src=["']([^"']+)["']/);
+                    if (!iframeMatch) return [];
 
-                        const fullUrl = "https://player4u.xyz" + urlMatch[1];
-                        try {
-                            const innerHtml = await soraFetch(fullUrl, { headers }).then(res => res.text());
+                    let iframeSrc = iframeMatch[1].trim();
+                    if (!iframeSrc.startsWith("http")) {
+                        iframeSrc = "https://uqloads.xyz/e/" + iframeSrc;
+                    }
 
-                            const innerIframeMatch = innerHtml.match(/<iframe[^>]+src=["']([^"']+)["']/);
-                            if (!innerIframeMatch) continue;
+                    let allStreams = [];
 
-                            let iframeSrc2 = innerIframeMatch[1].trim();
-                            if (!iframeSrc2.startsWith("http")) {
-                                iframeSrc2 = "https://uqloads.xyz/e/" + iframeSrc2;
-                            }
+                    // --- uqloads.xyz direct ---
+                    if (iframeSrc.includes("uqloads.xyz")) {
+                        const iframeHtml = await soraFetch(iframeSrc, { headers }).then(res => res.text());
 
-                            const iframeHtml2 = await soraFetch(iframeSrc2, { headers }).then(res => res.text());
-                            const packedScriptMatch = iframeHtml2.match(/(eval\(function\(p,a,c,k,e,d[\s\S]*?)<\/script>/);
-                            if (!packedScriptMatch) continue;
-
+                        const packedScriptMatch = iframeHtml.match(/(eval\(function\(p,a,c,k,e,d[\s\S]*?)<\/script>/);
+                        if (packedScriptMatch) {
                             const unpackedScript = unpack(packedScriptMatch[1]);
 
                             const streamRegex = /"hls[1-9]":\s*"([^"]+)"/g;
@@ -964,154 +1039,455 @@ async function extractStreamUrl(url) {
                                     allStreams.push(streamUrl);
                                 }
                             }
-                        } catch (err) {
-                            console.log("Error fetching inner player4u stream:", err);
-                            continue;
                         }
                     }
-                }
 
-                // --- Format results ---
-                if (allStreams.length === 0) return [];
+                    // --- player4u.xyz multi-res ---
+                    else if (iframeSrc.includes("player4u.xyz")) {
+                        const playerHtml = await soraFetch(iframeSrc, { headers }).then(res => res.text());
 
-                return allStreams.map((url, i) => ({
-                    title: `Vidapi - ${i + 1}`,
-                    streamUrl: url,
-                    headers,
-                }));
-            } catch (e) {
-                console.log("Vidapi stream extraction failed:", e);
-                return [];
-            }
-        };
+                        const liRegex = /<li class="slide-toggle">([\s\S]*?)<\/li>/g;
+                        let liMatch;
+                        while ((liMatch = liRegex.exec(playerHtml)) !== null) {
+                            const liContent = liMatch[1];
+                            const urlMatch = liContent.match(/onclick="go\('([^']+)'\)"/);
+                            if (!urlMatch) continue;
 
-        // --- RgShows fetch ---
-        // const fetchRgShows = async () => {
-        //     try {
-        //         let rgShowsUrl;
+                            const fullUrl = "https://player4u.xyz" + urlMatch[1];
+                            try {
+                                const innerHtml = await soraFetch(fullUrl, { headers }).then(res => res.text());
 
-        //         if (type === 'movie') {
-        //             rgShowsUrl = `https://api.rgshows.me/main/movie/${path}`
-        //         } else if (type === 'tv') {
-        //             const [showId, seasonNumber, episodeNumber] = path.split('/');
-        //             rgShowsUrl = `https://api.rgshows.me/main/tv/${showId}/${seasonNumber}/${episodeNumber}`;
-        //         } else {
-        //             return null;
-        //         }
+                                const innerIframeMatch = innerHtml.match(/<iframe[^>]+src=["']([^"']+)["']/);
+                                if (!innerIframeMatch) continue;
 
-        //         const headers = {
-        //             'Origin': 'https://www.vidsrc.wtf',
-        //             'Referer': 'https://www.vidsrc.wtf/'
-        //         };
+                                let iframeSrc2 = innerIframeMatch[1].trim();
+                                if (!iframeSrc2.startsWith("http")) {
+                                    iframeSrc2 = "https://uqloads.xyz/e/" + iframeSrc2;
+                                }
 
-        //         const rgShowsResponse = await soraFetch(rgShowsUrl, { headers });
-        //         const rgShowsData = await rgShowsResponse.json();
+                                const iframeHtml2 = await soraFetch(iframeSrc2, { headers }).then(res => res.text());
+                                const packedScriptMatch = iframeHtml2.match(/(eval\(function\(p,a,c,k,e,d[\s\S]*?)<\/script>/);
+                                if (!packedScriptMatch) continue;
 
-        //         if (rgShowsData && rgShowsData.stream) {
-        //             return [{
-        //                 title: `RgShows`,
-        //                 streamUrl: rgShowsData.stream.url,
-        //                 headers: { Referer: "https://www.vidsrc.wtf/" }
-        //             }];
-        //         }
-        //     } catch (e) {
-        //         console.log('RgShows fetch failed silently:', e);
-        //     }
-        //     return [];
-        // };
+                                const unpackedScript = unpack(packedScriptMatch[1]);
 
-        // --- Vidnest.fun ---
-        // --- Movies and TV shows ---
-        const fetchVidnest = async () => {
-            try {
-                let vidnestUrl;
+                                const streamRegex = /"hls[1-9]":\s*"([^"]+)"/g;
+                                let match;
+                                while ((match = streamRegex.exec(unpackedScript)) !== null) {
+                                    const streamUrl = match[1].trim();
+                                    if (streamUrl.startsWith("https://") && (streamUrl.includes(".m3u8") || streamUrl.includes(".mp4"))) {
+                                        allStreams.push(streamUrl);
+                                    }
+                                }
+                            } catch (err) {
+                                console.log("Error fetching inner player4u stream:", err);
+                                continue;
+                            }
+                        }
+                    }
 
-                if (type === 'movie') {
-                    vidnestUrl = `https://embed.madaraverse.online/hollymoviehd/movie/${path}`
-                } else if (type === 'tv') {
-                    const [showId, seasonNumber, episodeNumber] = path.split('/');
-                    vidnestUrl = `https://embed.madaraverse.online/hollymoviehd/tv/${showId}/${seasonNumber}/${episodeNumber}`;
-                } else {
-                    return null;
-                }
+                    // --- Format results ---
+                    if (allStreams.length === 0) return [];
 
-                const headers = {
-                    'Referer': 'https://vidnest.fun/',
-                    'Origin': 'https://vidnest.fun'
-                };
-                const data = await soraFetch(vidnestUrl, { headers }).then(res => res.json());
-
-                if (!data?.sources || !Array.isArray(data.sources)) {
+                    return allStreams.map((url, i) => ({
+                        title: `Vidapi - ${i + 1}`,
+                        streamUrl: url,
+                        headers,
+                    }));
+                } catch (e) {
+                    console.log("Vidapi stream extraction failed:", e);
                     return [];
                 }
-                const vidnestStreamList = data.sources.map(source => source.file).filter(Boolean);
+            };
 
-                if (vidnestStreamList?.length === 1) {
-                    return [{
-                        title: 'Vidnest',
-                        streamUrl: `https://proxy-2.madaraverse.online/proxy?url=${vidnestStreamList[0]}`,
-                        headers
-                    }];
-                } else {
-                    return vidnestStreamList?.map((url, i) => ({
-                        title: `Vidnest - ${i + 1}`,
-                        streamUrl: `https://proxy-2.madaraverse.online/proxy?url=${url}`,
-                        headers
-                    }));
-                }
-            } catch (e) {
-                console.log("Vidnest stream extraction failed silently:", e);
-                return [];
-            }
-        };
+            // --- RgShows fetch ---
+            // const fetchRgShows = async () => {
+            //     try {
+            //         let rgShowsUrl;
 
-        // --- Vidnest.fun ---
-        // --- Anime ---
-        const fetchVidnestAnime = async () => {
-            try {
-                if (type === 'anime') {
-                    const [anilistId, episodeNumber] = path.split('/');
-                
-                    const hosts = ['zaza', 'miko', 'animez', 'hd-1', 'hd-2', 'hd-3', 'shiro'];
-                    const types = ['sub', 'dub'];
+            //         if (type === 'movie') {
+            //             rgShowsUrl = `https://api.rgshows.me/main/movie/${path}`
+            //         } else if (type === 'tv') {
+            //             const [showId, seasonNumber, episodeNumber] = path.split('/');
+            //             rgShowsUrl = `https://api.rgshows.me/main/tv/${showId}/${seasonNumber}/${episodeNumber}`;
+            //         } else {
+            //             return null;
+            //         }
+
+            //         const headers = {
+            //             'Origin': 'https://www.vidsrc.wtf',
+            //             'Referer': 'https://www.vidsrc.wtf/'
+            //         };
+
+            //         const rgShowsResponse = await soraFetch(rgShowsUrl, { headers });
+            //         const rgShowsData = await rgShowsResponse.json();
+
+            //         if (rgShowsData && rgShowsData.stream) {
+            //             return [{
+            //                 title: `RgShows`,
+            //                 streamUrl: rgShowsData.stream.url,
+            //                 headers: { Referer: "https://www.vidsrc.wtf/" }
+            //             }];
+            //         }
+            //     } catch (e) {
+            //         console.log('RgShows fetch failed silently:', e);
+            //     }
+            //     return [];
+            // };
+
+            // --- Vidnest.fun ---
+            // --- Movies and TV shows ---
+            const fetchVidnest = async () => {
+                try {
+                    let vidnestUrl;
+
+                    if (type === 'movie') {
+                        vidnestUrl = `https://embed.madaraverse.online/hollymoviehd/movie/${path}`
+                    } else if (type === 'tv') {
+                        const [showId, seasonNumber, episodeNumber] = path.split('/');
+                        vidnestUrl = `https://embed.madaraverse.online/hollymoviehd/tv/${showId}/${seasonNumber}/${episodeNumber}`;
+                    } else {
+                        return null;
+                    }
 
                     const headers = {
                         'Referer': 'https://vidnest.fun/',
                         'Origin': 'https://vidnest.fun'
                     };
+                    const data = await soraFetch(vidnestUrl, { headers }).then(res => res.json());
 
-                    // Build all requests
-                    const requests = [];
-                    let subtitleUrls = [];
+                    if (!data?.sources || !Array.isArray(data.sources)) {
+                        return [];
+                    }
+                    const vidnestStreamList = data.sources.map(source => source.file).filter(Boolean);
 
-                    for (const host of hosts) {
-                        const hostTitle = 
-                            host === 'miko' ? 'Aniwave' : 
-                            host === 'zaza' ? 'Animepahe' : 
-                            host === 'shiro' ? 'AniZone' : 
-                            host === 'animez' ? 'AnimeZ' : 
-                            'Zoro';
+                    if (vidnestStreamList?.length === 1) {
+                        return [{
+                            title: 'Vidnest',
+                            streamUrl: `https://proxy-2.madaraverse.online/proxy?url=${vidnestStreamList[0]}`,
+                            headers
+                        }];
+                    } else {
+                        return vidnestStreamList?.map((url, i) => ({
+                            title: `Vidnest - ${i + 1}`,
+                            streamUrl: `https://proxy-2.madaraverse.online/proxy?url=${url}`,
+                            headers
+                        }));
+                    }
+                } catch (e) {
+                    console.log("Vidnest stream extraction failed silently:", e);
+                    return [];
+                }
+            };
 
-                        for (const type of types) {
-                            if (type === 'dub' && host === 'animez') continue;
-                            const url = `https://backend.xaiby.sbs/sources?id=${anilistId}&ep=${episodeNumber}&host=${host}&type=${type}`;
-                            requests.push(
-                                soraFetch(url, { headers })
+            // --- Vidrock.net ---
+            const fetchVidrock = async () => {
+                try {
+                    let vidrockUrl;
+
+                    if (type === 'movie') {
+                        // Do nothing
+                        vidrockUrl = `https://vidrock.net/api/movie/${path}`;
+                    } else if (type === 'tv') {
+                        // TV format: episode-season-reversedShowId
+                        const [showId, seasonNumber, episodeNumber] = path.split('/');
+                        const transformed = `${episodeNumber}-${seasonNumber}-${showId.split("").reverse().join("")}`;
+                        const encodedOnce = btoa(unescape(encodeURIComponent(transformed)));
+                        const encodedTwice = btoa(encodedOnce);
+
+                        vidrockUrl = `https://vidrock.net/api/tv/${encodedTwice}`;
+                    } else {
+                        return null;
+                    }
+
+                    const headers = {
+                        'Referer': 'https://vidrock.net/',
+                        'Origin': 'https://vidrock.net'
+                    };
+                    const data = await soraFetch(vidrockUrl, { headers }).then(res => res.json());
+
+                    if (!data || typeof data !== 'object') return [];
+
+                    const vidrockStreamList = Object.entries(data)
+                        .filter(([key, s]) => s?.url && s.language?.toLowerCase() === 'english')
+                        .map(([key, s]) => {
+                            const match = key.match(/source(\d+)/i);
+                            const sourceNum = match ? match[1] : 'Unknown';
+                            return {
+                                title: `Vidrock - ${sourceNum}`,
+                                streamUrl: s.url,
+                                headers
+                            };
+                        });
+
+                    return vidrockStreamList;
+                } catch (e) {
+                    console.log("Vidrock stream extraction failed silently:", e);
+                    return [];
+                }
+            };
+
+            // --- CloudStream Pro fetch ---
+            const fetchCloudStreamPro = async () => {
+                try {
+                    let cloudStreamUrl;
+
+                    if (type === 'movie') {
+                        cloudStreamUrl = `https://cdn.moviesapi.club/embed/movie/${path}`
+                    } else if (type === 'tv') {
+                        const [showId, seasonNumber, episodeNumber] = path.split('/');
+                        cloudStreamUrl = `https://cdn.moviesapi.club/embed/tv/${showId}/${seasonNumber}/${episodeNumber}`;
+                    } else {
+                        return null;
+                    }
+
+                    const html = await soraFetch(cloudStreamUrl).then(res => res.text());
+                    const embedRegex = /<iframe[^>]*src="([^"]+)"[^>]*>/g;
+                    const embedUrl = Array.from(html.matchAll(embedRegex), m => m[1].trim()).find(Boolean);
+
+                    if (!embedUrl) return [];
+
+                    const completedUrl = embedUrl.startsWith('http') ? embedUrl : `https:${embedUrl}`;
+                    const html2 = await soraFetch(completedUrl).then(res => res.text());
+                    const match2 = html2.match(/src:\s*['"]([^'"]+)['"]/);
+
+                    if (!match2 || !match2[1]) return [];
+
+                    const src = `https://cloudnestra.com${match2[1]}`;
+                    const html3 = await soraFetch(src).then(res => res.text());
+                    const match3 = html3.match(/file:\s*['"]([^'"]+)['"]/);
+
+                    if (!match3 || !match3[1]) return [];
+
+                    return [{
+                        title: "CloudStream Pro",
+                        streamUrl: match3[1],
+                        headers: {}
+                    }];
+                } catch (e) {
+                    console.log('CloudStream Pro fallback failed silently');
+                    return [];
+                }
+            };
+
+            // --- Subtitle fetch ---
+            const fetchSubtitles = async () => {
+                try {
+                    let subtitleApiUrl;
+
+                    if (type === 'movie') {
+                        subtitleApiUrl = `https://sub.wyzie.ru/search?id=${path}`
+                    } else if (type === 'tv') {
+                        const [showId, seasonNumber, episodeNumber] = path.split('/');
+                        subtitleApiUrl = `https://sub.wyzie.ru/search?id=${showId}&season=${seasonNumber}&episode=${episodeNumber}`;
+                    } else {
+                        return "";
+                    }
+
+                    const subtitleTrackResponse = await soraFetch(subtitleApiUrl);
+                    const subtitleTrackData = await subtitleTrackResponse.json();
+
+                    let subtitleTrack = subtitleTrackData.find(track =>
+                        track.display.includes('English') && ['ASCII', 'UTF-8'].includes(track.encoding)
+                    ) || subtitleTrackData.find(track =>
+                        track.display.includes('English') && track.encoding === 'CP1252'
+                    ) || subtitleTrackData.find(track =>
+                        track.display.includes('English') && track.encoding === 'CP1250'
+                    ) || subtitleTrackData.find(track =>
+                        track.display.includes('English') && track.encoding === 'CP850'
+                    );
+
+                    if (subtitleTrack) {
+                        return subtitleTrack.url;
+                    }
+                } catch {
+                    console.log('Subtitle extraction failed silently.');
+                }
+                return "";
+            };
+
+            // Run all fetches in parallel
+            const [
+                vidzeeStreams,
+                xprimeStreams,
+                vixSrcStreams,
+                vidapiStreams,
+                // rgShowsStreams,
+                vidnestStreams,
+                vidrockStreams,
+                cloudStreamProStreams,
+                subtitleUrl
+            ] = await Promise.allSettled([
+                fetchVidzee(),
+                fetchXPrime(),
+                fetchVixSrc(),
+                fetchVidapi(),
+                // fetchRgShows(),
+                fetchVidnest(),
+                fetchVidrock(),
+                fetchCloudStreamPro(),
+                fetchSubtitles()
+            ]).then(results => results.map(r => r.status === 'fulfilled' ? r.value : (Array.isArray(r.value) ? [] : "")));
+
+            // Collect streams from all sources
+            streams.push(...(vidzeeStreams || []));
+            streams.push(...(xprimeStreams || []));
+            streams.push(...(vixSrcStreams || []));
+            streams.push(...(vidapiStreams || []));
+            // streams.push(...(rgShowsStreams || []));
+            streams.push(...(vidnestStreams || []));
+            streams.push(...(vidrockStreams || []));
+            streams.push(...(cloudStreamProStreams || []));
+
+            if (subtitleUrl) {
+                subtitles = subtitleUrl;
+            }
+        } else if (type === 'anime') {
+            // --- Vidnest.fun ---
+            // --- Anime ---
+            const fetchVidnestAnime = async () => {
+                try {
+                    if (type === 'anime') {
+                        const [anilistId, episodeNumber] = path.split('/');
+                    
+                        const hosts = ['zaza', 'miko', 'animez', 'hd-1', 'hd-2', 'hd-3', 'shiro'];
+                        const types = ['sub', 'dub'];
+
+                        const headers = {
+                            'Referer': 'https://vidnest.fun/',
+                            'Origin': 'https://vidnest.fun'
+                        };
+
+                        // Build all requests
+                        const requests = [];
+                        let subtitleUrls = [];
+
+                        for (const host of hosts) {
+                            const hostTitle = 
+                                host === 'miko' ? 'Aniwave' : 
+                                host === 'zaza' ? 'Animepahe' : 
+                                host === 'shiro' ? 'AniZone' : 
+                                host === 'animez' ? 'AnimeZ' : 
+                                'Zoro';
+
+                            for (const type of types) {
+                                if (type === 'dub' && host === 'animez') continue;
+                                const url = `https://backend.xaiby.sbs/sources?id=${anilistId}&ep=${episodeNumber}&host=${host}&type=${type}`;
+                                requests.push(
+                                    soraFetch(url, { headers })
+                                        .then(res => res.json())
+                                        .then(data => {
+                                            if (!data?.sources?.url) return null;
+
+                                            let subs = [];
+
+                                            if (data.sources?.subtitles && Array.isArray(data.sources?.subtitles)) {
+                                                subs = data.sources.subtitles;
+                                            } else if (data.sources?.tracks && Array.isArray(data.sources?.tracks)) {
+                                                subs = data.sources.tracks;
+                                            } else if (Array.isArray(data.subtitles)) {
+                                                subs = data.subtitles;
+                                            }
+
+                                            // Find the first English .vtt that is not a thumbnail
+                                            const found = subs.find(s =>
+                                                typeof (s.url || s.file) === "string" &&
+                                                /\.vtt$/i.test(s.url || s.file) &&
+                                                !/thumbnails\.vtt$/i.test(s.url || s.file) &&
+                                                (s.lang || s.label || "").toLowerCase().includes("english")
+                                            );
+
+                                            if (found) {
+                                                subtitleUrls = found.url || found.file;
+                                            }
+
+                                            const streamUrl = host === 'miko' ? data.sources.url
+                                                : host === "animez" ? data.sources.url
+                                                : `https://proxy-2.madaraverse.online/proxy?url=${encodeURIComponent(data.sources.url)}`;
+
+                                            return {
+                                                title: `Vidnest - ${hostTitle} - ${host.toUpperCase()} - ${type.toUpperCase()}`,
+                                                streamUrl,
+                                                headers: { Referer: data.sources?.headers?.Referer || 'https://vidnest.fun/' }
+                                            };
+                                        })
+                                        .catch(() => null)
+                                );
+                            }
+                        }
+
+                        const results = await Promise.all(requests);
+
+                        return {
+                            streams: results.filter(Boolean),
+                            subtitles: subtitleUrls
+                        };
+
+                        // const results = await Promise.all(requests);
+                        // return results.filter(Boolean);
+                    }
+                } catch (e) {
+                    console.log("Vidnest Anime stream extraction failed silently:", e);
+                    return [];
+                }
+            };
+
+            // --- Lunar Anime ---
+            // --- Anime ---
+            const fetchLunarAnime = async () => {
+                try {
+                    if (type === 'anime') {
+                        const [anilistId, episodeNumber] = path.split('/');
+                        const types = ['sub', 'dub'];
+
+                        const apiUrl = `https://2ndprovider.lunaranime.ru/vermillion/episodes?id=${anilistId}`;
+                        const response = await soraFetch(apiUrl);
+                        const data = await response.json();
+
+                        const sources = data.data.episodes;
+
+                        let requests = [];
+                        let subtitleUrl = "";
+
+                        for (const source of sources) {
+                            const providerId = source.providerId;
+
+                            const hostTitle = 
+                                providerId === 'miku' ? 'MegaCloud' : 
+                                providerId === 'anya' ? 'MegaCloud' : 
+                                providerId === 'lofi' ? 'StreamUP' : 
+                                providerId === 'wave' ? 'Aniwave' : 
+                                providerId === 'pahe' ? 'Animepahe' : 
+                                providerId === 'kami' ? 'KickAssAnime' :
+                                providerId === 'zone' ? 'AniZone' :
+                                null;
+
+                            if (providerId === "yuki" || providerId === "zone" || providerId === "akane" || providerId === "strix" || providerId === "kami" || providerId === "pahe") {
+                                continue;
+                            }
+
+                            const episode = source.episodes.find(e => e.number === Number(episodeNumber));
+
+                            if (!episode) {
+                                console.warn(`Episode ${episodeNumber} not found for provider ${providerId}`);
+                                continue;
+                            }
+
+                            const buildRequest = (subType) => {
+                                const streamProviderUrl = `https://2ndprovider.lunaranime.ru/vermillion/sources?id=${anilistId}&provider=${providerId}&epId=${episode.id}&epNum=${episode.number}&subType=${subType}`;
+                                return soraFetch(streamProviderUrl)
                                     .then(res => res.json())
                                     .then(data => {
-                                        if (!data?.sources?.url) return null;
+                                        if (!data?.data?.sources) return null;
 
+                                        // collect subs
                                         let subs = [];
-
-                                        if (data.sources?.subtitles && Array.isArray(data.sources?.subtitles)) {
-                                            subs = data.sources.subtitles;
-                                        } else if (data.sources?.tracks && Array.isArray(data.sources?.tracks)) {
-                                            subs = data.sources.tracks;
-                                        } else if (Array.isArray(data.subtitles)) {
-                                            subs = data.subtitles;
+                                        if (Array.isArray(data.data.subtitles)) {
+                                            subs = data.data.subtitles;
+                                        } else if (Array.isArray(data.data.tracks)) {
+                                            subs = data.data.tracks;
                                         }
 
-                                        // Find the first English .vtt that is not a thumbnail
                                         const found = subs.find(s =>
                                             typeof (s.url || s.file) === "string" &&
                                             /\.vtt$/i.test(s.url || s.file) &&
@@ -1120,313 +1496,69 @@ async function extractStreamUrl(url) {
                                         );
 
                                         if (found) {
-                                            subtitleUrls = found.url || found.file;
+                                            subtitleUrl = found.url || found.file;
                                         }
 
-                                        const streamUrl = host === 'miko' ? data.sources.url
-                                            : host === "animez" ? data.sources.url
-                                            : `https://proxy-2.madaraverse.online/proxy?url=${encodeURIComponent(data.sources.url)}`;
-
-                                        return {
-                                            title: `Vidnest - ${hostTitle} - ${host.toUpperCase()} - ${type.toUpperCase()}`,
-                                            streamUrl,
-                                            headers: { Referer: data.sources?.headers?.Referer || 'https://vidnest.fun/' }
-                                        };
+                                        return data.data.sources
+                                            .filter(src => src.isM3U8 !== false)
+                                            .map(src => ({
+                                                title: `LUNAR ${hostTitle ? `- ${hostTitle} - ` : ""}${providerId.toUpperCase()} - ${subType.toUpperCase()}${src.quality ? ` - ${src.quality}` : ""}`,
+                                                streamUrl: `https://cluster.lunaranime.ru/api/proxy/hls/custom?url=${src.url}${data.data.headers ? `&referer=${data.data.headers?.Referer}` : ''}`,
+                                                headers: data.data.headers || {}
+                                            }));
                                     })
-                                    .catch(() => null)
-                            );
-                        }
-                    }
+                                    .catch(() => null);
+                            };
 
-                    const results = await Promise.all(requests);
-
-                    return {
-                        streams: results.filter(Boolean),
-                        subtitles: subtitleUrls
-                    };
-
-                    // const results = await Promise.all(requests);
-                    // return results.filter(Boolean);
-                }
-            } catch (e) {
-                console.log("Vidnest Anime stream extraction failed silently:", e);
-                return [];
-            }
-        };
-
-        // --- Lunar Anime ---
-        // --- Anime ---
-        const fetchLunarAnime = async () => {
-            try {
-                if (type === 'anime') {
-                    const [anilistId, episodeNumber] = path.split('/');
-                    const types = ['sub', 'dub'];
-
-                    const apiUrl = `https://2ndprovider.lunaranime.ru/vermillion/episodes?id=${anilistId}`;
-                    const response = await soraFetch(apiUrl);
-                    const data = await response.json();
-
-                    const sources = data.data.episodes;
-
-                    let requests = [];
-                    let subtitleUrl = "";
-
-                    for (const source of sources) {
-                        const providerId = source.providerId;
-
-                        const hostTitle = 
-                            providerId === 'miku' ? 'MegaCloud' : 
-                            providerId === 'anya' ? 'MegaCloud' : 
-                            providerId === 'lofi' ? 'StreamUP' : 
-                            providerId === 'wave' ? 'Aniwave' : 
-                            providerId === 'pahe' ? 'Animepahe' : 
-                            providerId === 'kami' ? 'KickAssAnime' :
-                            providerId === 'zone' ? 'AniZone' :
-                            null;
-
-                        if (providerId === "yuki" || providerId === "zone" || providerId === "akane" || providerId === "strix" || providerId === "kami" || providerId === "pahe") {
-                            continue;
-                        }
-
-                        const episode = source.episodes.find(e => e.number === Number(episodeNumber));
-
-                        if (!episode) {
-                            console.warn(`Episode ${episodeNumber} not found for provider ${providerId}`);
-                            continue;
-                        }
-
-                        const buildRequest = (subType) => {
-                            const streamProviderUrl = `https://2ndprovider.lunaranime.ru/vermillion/sources?id=${anilistId}&provider=${providerId}&epId=${episode.id}&epNum=${episode.number}&subType=${subType}`;
-                            return soraFetch(streamProviderUrl)
-                                .then(res => res.json())
-                                .then(data => {
-                                    if (!data?.data?.sources) return null;
-
-                                    // collect subs
-                                    let subs = [];
-                                    if (Array.isArray(data.data.subtitles)) {
-                                        subs = data.data.subtitles;
-                                    } else if (Array.isArray(data.data.tracks)) {
-                                        subs = data.data.tracks;
-                                    }
-
-                                    const found = subs.find(s =>
-                                        typeof (s.url || s.file) === "string" &&
-                                        /\.vtt$/i.test(s.url || s.file) &&
-                                        !/thumbnails\.vtt$/i.test(s.url || s.file) &&
-                                        (s.lang || s.label || "").toLowerCase().includes("english")
-                                    );
-
-                                    if (found) {
-                                        subtitleUrl = found.url || found.file;
-                                    }
-
-                                    return data.data.sources
-                                        .filter(src => src.isM3U8 !== false)
-                                        .map(src => ({
-                                            title: `LUNAR ${hostTitle ? `- ${hostTitle} - ` : ""}${providerId.toUpperCase()} - ${subType.toUpperCase()}${src.quality ? ` - ${src.quality}` : ""}`,
-                                            streamUrl: `https://cluster.lunaranime.ru/api/proxy/hls/custom?url=${src.url}${data.data.headers ? `&referer=${data.data.headers?.Referer}` : ''}`,
-                                            headers: data.data.headers || {}
-                                        }));
-                                })
-                                .catch(() => null);
-                        };
-
-                        if (episode.hasDub) {
-                            for (const t of types) {
-                                requests.push(buildRequest(t));
+                            if (episode.hasDub) {
+                                for (const t of types) {
+                                    requests.push(buildRequest(t));
+                                }
+                            } else {
+                                requests.push(buildRequest("sub"));
                             }
-                        } else {
-                            requests.push(buildRequest("sub"));
                         }
-                    }
 
-                    const results = await Promise.all(requests);
-                    return {
-                        streams: results.flat().filter(Boolean),
-                        subtitles: subtitleUrl
-                    };
-                }
-                return { streams: [], subtitles: "" };
-            } catch (e) {
-                console.log("Lunar Anime stream extraction failed silently:", e);
-                return { streams: [], subtitles: "" };
-            }
-        };
-
-        // --- Vidrock.net ---
-        const fetchVidrock = async () => {
-            try {
-                let vidrockUrl;
-
-                if (type === 'movie') {
-                    // Do nothing
-                    vidrockUrl = `https://vidrock.net/api/movie/${path}`;
-                } else if (type === 'tv') {
-                    // TV format: episode-season-reversedShowId
-                    const [showId, seasonNumber, episodeNumber] = path.split('/');
-                    const transformed = `${episodeNumber}-${seasonNumber}-${showId.split("").reverse().join("")}`;
-                    const encodedOnce = btoa(unescape(encodeURIComponent(transformed)));
-                    const encodedTwice = btoa(encodedOnce);
-
-                    vidrockUrl = `https://vidrock.net/api/tv/${encodedTwice}`;
-                } else {
-                    return null;
-                }
-
-                const headers = {
-                    'Referer': 'https://vidrock.net/',
-                    'Origin': 'https://vidrock.net'
-                };
-                const data = await soraFetch(vidrockUrl, { headers }).then(res => res.json());
-
-                if (!data || typeof data !== 'object') return [];
-
-                const vidrockStreamList = Object.entries(data)
-                    .filter(([key, s]) => s?.url && s.language?.toLowerCase() === 'english')
-                    .map(([key, s]) => {
-                        const match = key.match(/source(\d+)/i);
-                        const sourceNum = match ? match[1] : 'Unknown';
+                        const results = await Promise.all(requests);
                         return {
-                            title: `Vidrock - ${sourceNum}`,
-                            streamUrl: s.url,
-                            headers
+                            streams: results.flat().filter(Boolean),
+                            subtitles: subtitleUrl
                         };
-                    });
-
-                return vidrockStreamList;
-            } catch (e) {
-                console.log("Vidrock stream extraction failed silently:", e);
-                return [];
-            }
-        };
-
-        // --- CloudStream Pro fetch ---
-        const fetchCloudStreamPro = async () => {
-            try {
-                let cloudStreamUrl;
-
-                if (type === 'movie') {
-                    cloudStreamUrl = `https://cdn.moviesapi.club/embed/movie/${path}`
-                } else if (type === 'tv') {
-                    const [showId, seasonNumber, episodeNumber] = path.split('/');
-                    cloudStreamUrl = `https://cdn.moviesapi.club/embed/tv/${showId}/${seasonNumber}/${episodeNumber}`;
-                } else {
-                    return null;
+                    }
+                    return { streams: [], subtitles: "" };
+                } catch (e) {
+                    console.log("Lunar Anime stream extraction failed silently:", e);
+                    return { streams: [], subtitles: "" };
                 }
+            };
 
-                const html = await soraFetch(cloudStreamUrl).then(res => res.text());
-                const embedRegex = /<iframe[^>]*src="([^"]+)"[^>]*>/g;
-                const embedUrl = Array.from(html.matchAll(embedRegex), m => m[1].trim()).find(Boolean);
+            // Run all fetches in parallel
+            const [
+                vidnestAnimeResult,
+                lunarAnimeResult,
+            ] = await Promise.allSettled([
+                fetchVidnestAnime(),
+                fetchLunarAnime(),
+            ]).then(results => results.map(r => r.status === 'fulfilled' ? r.value : (Array.isArray(r.value) ? [] : "")));
 
-                if (!embedUrl) return [];
+            // Collect streams from all sources
+            streams.push(...((vidnestAnimeResult?.streams) || []));
+            streams.push(...((lunarAnimeResult?.streams) || []));
 
-                const completedUrl = embedUrl.startsWith('http') ? embedUrl : `https:${embedUrl}`;
-                const html2 = await soraFetch(completedUrl).then(res => res.text());
-                const match2 = html2.match(/src:\s*['"]([^'"]+)['"]/);
-
-                if (!match2 || !match2[1]) return [];
-
-                const src = `https://cloudnestra.com${match2[1]}`;
-                const html3 = await soraFetch(src).then(res => res.text());
-                const match3 = html3.match(/file:\s*['"]([^'"]+)['"]/);
-
-                if (!match3 || !match3[1]) return [];
-
-                return [{
-                    title: "CloudStream Pro",
-                    streamUrl: match3[1],
-                    headers: {}
-                }];
-            } catch (e) {
-                console.log('CloudStream Pro fallback failed silently');
-                return [];
+            if (vidnestAnimeResult?.subtitles?.length && vidnestAnimeResult?.subtitles) {
+                subtitles = vidnestAnimeResult.subtitles;
+            } else if (lunarAnimeResult?.subtitles?.length && lunarAnimeResult?.subtitles) {
+                subtitles = lunarAnimeResult.subtitles;
             }
-        };
-
-        // --- Subtitle fetch ---
-        const fetchSubtitles = async () => {
-            try {
-                let subtitleApiUrl;
-
-                if (type === 'movie') {
-                    subtitleApiUrl = `https://sub.wyzie.ru/search?id=${path}`
-                } else if (type === 'tv') {
-                    const [showId, seasonNumber, episodeNumber] = path.split('/');
-                    subtitleApiUrl = `https://sub.wyzie.ru/search?id=${showId}&season=${seasonNumber}&episode=${episodeNumber}`;
-                } else {
-                    return "";
+        } else if (type === 'onepace') {
+            streams.push({ 
+                title: "OnePace", 
+                streamUrl: `https://pixeldrain.net/api/file/${path}?download`, 
+                headers: {
+                    'Referer': 'https://pixeldrain.net/',
+                    'Origin': 'https://pixeldrain.net'
                 }
-
-                const subtitleTrackResponse = await soraFetch(subtitleApiUrl);
-                const subtitleTrackData = await subtitleTrackResponse.json();
-
-                let subtitleTrack = subtitleTrackData.find(track =>
-                    track.display.includes('English') && ['ASCII', 'UTF-8'].includes(track.encoding)
-                ) || subtitleTrackData.find(track =>
-                    track.display.includes('English') && track.encoding === 'CP1252'
-                ) || subtitleTrackData.find(track =>
-                    track.display.includes('English') && track.encoding === 'CP1250'
-                ) || subtitleTrackData.find(track =>
-                    track.display.includes('English') && track.encoding === 'CP850'
-                );
-
-                if (subtitleTrack) {
-                    return subtitleTrack.url;
-                }
-            } catch {
-                console.log('Subtitle extraction failed silently.');
-            }
-            return "";
-        };
-
-        // Run all fetches in parallel
-        const [
-            vidzeeStreams,
-            xprimeStreams,
-            vixSrcStreams,
-            vidapiStreams,
-            // rgShowsStreams,
-            vidnestStreams,
-            vidnestAnimeResult,
-            lunarAnimeResult,
-            vidrockStreams,
-            cloudStreamProStreams,
-            subtitleUrl
-        ] = await Promise.allSettled([
-            fetchVidzee(),
-            fetchXPrime(),
-            fetchVixSrc(),
-            fetchVidapi(),
-            // fetchRgShows(),
-            fetchVidnest(),
-            fetchVidnestAnime(),
-            fetchLunarAnime(),
-            fetchVidrock(),
-            fetchCloudStreamPro(),
-            fetchSubtitles()
-        ]).then(results => results.map(r => r.status === 'fulfilled' ? r.value : (Array.isArray(r.value) ? [] : "")));
-
-        // Collect streams from all sources
-        streams.push(...(vidzeeStreams || []));
-        streams.push(...(xprimeStreams || []));
-        streams.push(...(vixSrcStreams || []));
-        streams.push(...(vidapiStreams || []));
-        // streams.push(...(rgShowsStreams || []));
-        streams.push(...(vidnestStreams || []));
-        streams.push(...((vidnestAnimeResult?.streams) || []));
-        streams.push(...((lunarAnimeResult?.streams) || []));
-        streams.push(...(vidrockStreams || []));
-        streams.push(...(cloudStreamProStreams || []));
-
-        if (vidnestAnimeResult?.subtitles?.length && vidnestAnimeResult?.subtitles) {
-            subtitles = vidnestAnimeResult.subtitles;
-        } else if (lunarAnimeResult?.subtitles?.length && lunarAnimeResult?.subtitles) {
-            subtitles = lunarAnimeResult.subtitles;
-        }
-
-        if (subtitleUrl) {
-            subtitles = subtitleUrl;
+            });
         }
 
         const result = { streams, subtitles };
