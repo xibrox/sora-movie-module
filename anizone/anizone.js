@@ -9,6 +9,12 @@ async function searchResults(keyword) {
         const results = [];
         let match;
 
+        results.push({
+            title: "Use External Player",
+            image: "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/anizone/UseExternalPlayer.png",
+            href: ""
+        });
+
         while ((match = regex.exec(html)) !== null) {
             results.push({
                 title: match[4].trim(),
