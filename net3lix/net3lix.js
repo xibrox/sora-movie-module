@@ -4,35 +4,34 @@ async function searchResults(keyword) {
         const responseText = await soraFetch(`https://api.themoviedb.org/3/search/multi?api_key=9801b6b0548ad57581d111ea690c85c8&query=${encodedKeyword}&include_adult=false`);
         const data = await responseText.json();
 
-        let transformedResults = [];
+        const transformedResults = [
+            {
+                title: "Use External Player",
+                image: "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/net3lix/UseExternalPlayer.png",
+                href: ""
+            },
+            ...data.results.map(result => {
+                const image = result.poster_path
+                    ? `https://image.tmdb.org/t/p/w500${result.poster_path}`
+                    : "";
 
-        transformedResults.push({
-            title: "Use External Player",
-            image: "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/net3lix/UseExternalPlayer.png",
-            href: ""
-        });
+                if (result.media_type === "movie") {
+                    return {
+                        title: result.title || result.original_title || result.name || result.original_name || "Untitled",
+                        image,
+                        href: `https://net3lix.world/watch/movie/${result.id}`
+                    };
+                }
 
-        transformedResults = [...transformedResults, ...data.results.map(result => {
-            if(result.media_type === "movie" || result.title) {
-                return {
-                    title: result.title || result.name || result.original_title || result.original_name,
-                    image: `https://image.tmdb.org/t/p/w500${result.poster_path}`,
-                    href: `https://net3lix.world/watch/movie/${result.id}`
-                };
-            } else if(result.media_type === "tv" || result.name) {
-                return {
-                    title: result.name || result.title || result.original_name || result.original_title,
-                    image: `https://image.tmdb.org/t/p/w500${result.poster_path}`,
-                    href: `https://net3lix.world/watch/tv/${result.id}/1/1`
-                };
-            } else {
-                return {
-                    title: result.title || result.name || result.original_name || result.original_title || "Untitled",
-                    image: `https://image.tmdb.org/t/p/w500${result.poster_path}`,
-                    href: `https://net3lix.world/watch/tv/${result.id}/1/1`
-                };
-            }
-        })];
+                if (result.media_type === "tv") {
+                    return {
+                        title: result.name || result.original_name || result.title || result.original_title || "Untitled",
+                        image,
+                        href: `https://net3lix.world/watch/tv/${result.id}/1/1`
+                    };
+                }
+            })
+        ];
 
         console.log('Transformed Results: ' + transformedResults);
         return JSON.stringify(transformedResults);
