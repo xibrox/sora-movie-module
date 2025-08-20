@@ -279,7 +279,7 @@ async function extractStreamUrl(url) {
             const response = await soraFetch(url2);
             const html = await response.text();
 
-            const regex2 = /data-id="(\d+)"/g;
+            const regex2 = /data-linkid="(\d+)"/g;
             const ids = [];
             let match2;
                 while ((match2 = regex2.exec(html)) !== null) {
