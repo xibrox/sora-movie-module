@@ -487,11 +487,13 @@ async function searchResults(keyword) {
         }
 
         if (aniData?.Page?.media?.length > 0) {
-            transformedResults = aniData.Page.media.map(result => ({
+            transformedResults = aniData.Page.media
+            .map(result => ({
                 title: result.title.english || result.title.romaji || result.title.native || "Untitled",
                 image: result.coverImage.extraLarge || result.coverImage.large || result.coverImage.medium || "",
                 href: `anime/${result.id}`,
-            }));
+            }))
+            .filter(r => r.title.toLowerCase().includes(keyword.toLowerCase()));
         }
 
         // --- TMDB Section ---
@@ -543,6 +545,7 @@ async function searchResults(keyword) {
                     .filter(Boolean)
                     .filter(result => result.title !== "Overflow")
                     .filter(result => result.title !== "My Marriage Partner Is My Student, a Cocky Troublemaker")
+                    .filter(result => result.title.toLowerCase().includes(keyword.toLowerCase()))
             );
         }
 
