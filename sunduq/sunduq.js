@@ -1497,7 +1497,7 @@ async function extractStreamUrl(url) {
                                 providerId === 'zone' ? 'AniZone' :
                                 null;
 
-                            if (providerId === "yuki" || providerId === "zone" || providerId === "akane" || providerId === "strix" || providerId === "kami" || providerId === "pahe") {
+                            if (providerId === "yuki" || providerId === "zone" || providerId === "akane" || providerId === "strix" || providerId === "kami") {
                                 continue;
                             }
 

@@ -489,7 +489,7 @@ async function extractStreamUrl(url) {
                     for (const source of sources) {
                         const providerId = source.providerId;
 
-                        if (providerId === "yuki" || providerId === "zone" || providerId === "akane" || providerId === "strix" || providerId === "kami" || providerId === "pahe") {
+                        if (providerId === "yuki" || providerId === "zone" || providerId === "akane" || providerId === "strix" || providerId === "kami") {
                             continue;
                         }
 
