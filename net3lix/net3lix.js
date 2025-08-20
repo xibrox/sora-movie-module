@@ -4,7 +4,15 @@ async function searchResults(keyword) {
         const responseText = await soraFetch(`https://api.themoviedb.org/3/search/multi?api_key=9801b6b0548ad57581d111ea690c85c8&query=${encodedKeyword}&include_adult=false`);
         const data = await responseText.json();
 
-        const transformedResults = data.results.map(result => {
+        let transformedResults = [];
+
+        transformedResults.push({
+            title: "Use External Player",
+            image: "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/net3lix/UseExternalPlayer.png",
+            href: ""
+        });
+
+        transformedResults = [...transformedResults, ...data.results.map(result => {
             if(result.media_type === "movie" || result.title) {
                 return {
                     title: result.title || result.name || result.original_title || result.original_name,
@@ -24,7 +32,7 @@ async function searchResults(keyword) {
                     href: `https://net3lix.world/watch/tv/${result.id}/1/1`
                 };
             }
-        });
+        })];
 
         console.log('Transformed Results: ' + transformedResults);
         return JSON.stringify(transformedResults);
