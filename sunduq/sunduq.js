@@ -764,47 +764,94 @@ async function extractStreamUrl(url) {
         let subtitles = "";
 
         if (type === 'movie' || type === 'tv') {
-            // --- Vidzee fetch (parallel 5 servers) ---
-            const fetchVidzee = async () => {
-                const vidzeePromises = Array.from({ length: 5 }, (_, i) => {
-                    const sr = i + 1;
-                    let apiUrl;
+            // --- Vidnest.fun ---
+            // --- Movies and TV shows ---
+            const fetchVidnest = async () => {
+                try {
+                    let vidnestUrl;
 
                     if (type === 'movie') {
-                        apiUrl = `https://player.vidzee.wtf/api/server?id=${path}&sr=${sr}`;
+                        vidnestUrl = `https://embed.madaraverse.online/hollymoviehd/movie/${path}`
                     } else if (type === 'tv') {
                         const [showId, seasonNumber, episodeNumber] = path.split('/');
-                        apiUrl = `https://player.vidzee.wtf/api/server?id=${showId}&sr=${sr}&ss=${seasonNumber}&ep=${episodeNumber}`;
+                        vidnestUrl = `https://embed.madaraverse.online/hollymoviehd/tv/${showId}/${seasonNumber}/${episodeNumber}`;
                     } else {
                         return null;
                     }
 
-                    return soraFetch(apiUrl)
-                        .then(res => res.json())
-                        .then(data => {
-                            if (!data.url) return null;
-                            const stream = data.url.find(source =>
-                                source.lang?.toLowerCase() === 'english'
-                            );
-                            if (!stream) return null;
+                    const headers = {
+                        'Referer': 'https://vidnest.fun/',
+                        'Origin': 'https://vidnest.fun'
+                    };
+                    const data = await soraFetch(vidnestUrl, { headers }).then(res => res.json());
 
-                            return {
-                                title: `Vidzee - ${data.provider}`,
-                                streamUrl: stream.link,
-                                headers: {
-                                    'Origin': 'https://player.vidzee.wtf',
-                                    'Referer': data.headers?.Referer || ''
-                                }
-                            };
-                        })
-                        .catch(() => null);
-                });
+                    if (!data?.sources || !Array.isArray(data.sources)) {
+                        return [];
+                    }
+                    const vidnestStreamList = data.sources.map(source => source.file).filter(Boolean);
 
-                const results = await Promise.allSettled(vidzeePromises);
-                return results
-                    .filter(r => r.status === 'fulfilled' && r.value)
-                    .map(r => r.value);
+                    const proxyUrl = `https://proxy.nhdapi.xyz/proxy?url=`;
+
+                    if (vidnestStreamList?.length === 1) {
+                        return [{
+                            title: 'Vidnest',
+                            streamUrl: `${proxyUrl}${vidnestStreamList[0]}`,
+                            headers
+                        }];
+                    } else {
+                        return vidnestStreamList?.map((url, i) => ({
+                            title: `Vidnest - ${i + 1}`,
+                            streamUrl: `${proxyUrl}${url}`,
+                            headers
+                        }));
+                    }
+                } catch (e) {
+                    console.log("Vidnest stream extraction failed silently:", e);
+                    return [];
+                }
             };
+
+            // --- Vidzee fetch (parallel 5 servers) ---
+            // const fetchVidzee = async () => {
+            //     const vidzeePromises = Array.from({ length: 5 }, (_, i) => {
+            //         const sr = i + 1;
+            //         let apiUrl;
+
+            //         if (type === 'movie') {
+            //             apiUrl = `https://player.vidzee.wtf/api/server?id=${path}&sr=${sr}`;
+            //         } else if (type === 'tv') {
+            //             const [showId, seasonNumber, episodeNumber] = path.split('/');
+            //             apiUrl = `https://player.vidzee.wtf/api/server?id=${showId}&sr=${sr}&ss=${seasonNumber}&ep=${episodeNumber}`;
+            //         } else {
+            //             return null;
+            //         }
+
+            //         return soraFetch(apiUrl)
+            //             .then(res => res.json())
+            //             .then(data => {
+            //                 if (!data.url) return null;
+            //                 const stream = data.url.find(source =>
+            //                     source.lang?.toLowerCase() === 'english'
+            //                 );
+            //                 if (!stream) return null;
+
+            //                 return {
+            //                     title: `Vidzee - ${data.provider}`,
+            //                     streamUrl: stream.link,
+            //                     headers: {
+            //                         'Origin': 'https://player.vidzee.wtf',
+            //                         'Referer': data.headers?.Referer || ''
+            //                     }
+            //                 };
+            //             })
+            //             .catch(() => null);
+            //     });
+
+            //     const results = await Promise.allSettled(vidzeePromises);
+            //     return results
+            //         .filter(r => r.status === 'fulfilled' && r.value)
+            //         .map(r => r.value);
+            // };
 
             // --- XPrime fetches ---
             const fetchXPrime = async () => {
@@ -1163,51 +1210,6 @@ async function extractStreamUrl(url) {
             //     return [];
             // };
 
-            // --- Vidnest.fun ---
-            // --- Movies and TV shows ---
-            const fetchVidnest = async () => {
-                try {
-                    let vidnestUrl;
-
-                    if (type === 'movie') {
-                        vidnestUrl = `https://embed.madaraverse.online/hollymoviehd/movie/${path}`
-                    } else if (type === 'tv') {
-                        const [showId, seasonNumber, episodeNumber] = path.split('/');
-                        vidnestUrl = `https://embed.madaraverse.online/hollymoviehd/tv/${showId}/${seasonNumber}/${episodeNumber}`;
-                    } else {
-                        return null;
-                    }
-
-                    const headers = {
-                        'Referer': 'https://vidnest.fun/',
-                        'Origin': 'https://vidnest.fun'
-                    };
-                    const data = await soraFetch(vidnestUrl, { headers }).then(res => res.json());
-
-                    if (!data?.sources || !Array.isArray(data.sources)) {
-                        return [];
-                    }
-                    const vidnestStreamList = data.sources.map(source => source.file).filter(Boolean);
-
-                    if (vidnestStreamList?.length === 1) {
-                        return [{
-                            title: 'Vidnest',
-                            streamUrl: `https://proxy-2.madaraverse.online/proxy?url=${vidnestStreamList[0]}`,
-                            headers
-                        }];
-                    } else {
-                        return vidnestStreamList?.map((url, i) => ({
-                            title: `Vidnest - ${i + 1}`,
-                            streamUrl: `https://proxy-2.madaraverse.online/proxy?url=${url}`,
-                            headers
-                        }));
-                    }
-                } catch (e) {
-                    console.log("Vidnest stream extraction failed silently:", e);
-                    return [];
-                }
-            };
-
             // --- Vidrock.net ---
             const fetchVidrock = async () => {
                 try {
@@ -1336,34 +1338,34 @@ async function extractStreamUrl(url) {
 
             // Run all fetches in parallel
             const [
-                vidzeeStreams,
+                vidnestStreams,
+                // vidzeeStreams,
                 xprimeStreams,
                 vixSrcStreams,
                 vidapiStreams,
                 // rgShowsStreams,
-                vidnestStreams,
                 vidrockStreams,
                 cloudStreamProStreams,
                 subtitleUrl
             ] = await Promise.allSettled([
-                fetchVidzee(),
+                fetchVidnest(),
+                // fetchVidzee(),
                 fetchXPrime(),
                 fetchVixSrc(),
                 fetchVidapi(),
                 // fetchRgShows(),
-                fetchVidnest(),
                 fetchVidrock(),
                 fetchCloudStreamPro(),
                 fetchSubtitles()
             ]).then(results => results.map(r => r.status === 'fulfilled' ? r.value : (Array.isArray(r.value) ? [] : "")));
 
             // Collect streams from all sources
-            streams.push(...(vidzeeStreams || []));
+            streams.push(...(vidnestStreams || []));
+            // streams.push(...(vidzeeStreams || []));
             streams.push(...(xprimeStreams || []));
             streams.push(...(vixSrcStreams || []));
             streams.push(...(vidapiStreams || []));
             // streams.push(...(rgShowsStreams || []));
-            streams.push(...(vidnestStreams || []));
             streams.push(...(vidrockStreams || []));
             streams.push(...(cloudStreamProStreams || []));
 
@@ -1429,9 +1431,11 @@ async function extractStreamUrl(url) {
                                                 subtitleUrls = found.url || found.file;
                                             }
 
+                                            const proxyUrl = `https://proxy.nhdapi.xyz/proxy?url=`;
+
                                             const streamUrl = host === 'miko' ? data.sources.url
                                                 : host === "animez" ? data.sources.url
-                                                : `https://proxy-2.madaraverse.online/proxy?url=${encodeURIComponent(data.sources.url)}`;
+                                                : `${proxyUrl}${encodeURIComponent(data.sources.url)}`;
 
                                             return {
                                                 title: `Vidnest - ${hostTitle} - ${host.toUpperCase()} - ${type.toUpperCase()}`,
