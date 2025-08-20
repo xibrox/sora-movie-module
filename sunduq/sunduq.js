@@ -474,14 +474,14 @@ async function searchResults(keyword) {
         }
 
         // --- AniList Section ---
-        if (keyword.startsWith('!anime') || keyword.startsWith('!a') || keyword.startsWith('!')) {
+        if (keyword.startsWith('!anime') || keyword.startsWith('!a') || keyword.startsWith('/')) {
             aniData = await Anilist.getLatest({ isAdult: false });
         } else if (
-            !keyword.startsWith('!trending') &&
-            !keyword.startsWith('!top-rated-movie') &&
-            !keyword.startsWith('!top-rated-tv') &&
-            !keyword.startsWith('!popular-movie') &&
-            !keyword.startsWith('!popular-tv')
+            !keyword.startsWith('!trending') && !keyword.startsWith('!hot') && !keyword.startsWith('!tr') && !keyword.startsWith('!!') &&
+            !keyword.startsWith('!top-rated-movie') && !keyword.startsWith('!topmovie') && !keyword.startsWith('!tm') && !keyword.startsWith('?') &&
+            !keyword.startsWith('!top-rated-tv') && !keyword.startsWith('!toptv') && !keyword.startsWith('!tt') && !keyword.startsWith('??') &&
+            !keyword.startsWith('!popular-movie') && !keyword.startsWith('!popmovie') && !keyword.startsWith('!pm') && !keyword.startsWith('.') &&
+            !keyword.startsWith('!popular-tv') && !keyword.startsWith('!poptv') && !keyword.startsWith('!pt') && !keyword.startsWith('..')
         ) {
             aniData = await Anilist.search(keyword, { isAdult: false });
         }
@@ -508,7 +508,7 @@ async function searchResults(keyword) {
             baseUrl = `https://api.themoviedb.org/3/movie/popular?api_key=9801b6b0548ad57581d111ea690c85c8&include_adult=false&page=`;
         } else if (keyword.startsWith('!popular-tv') || keyword.startsWith('!poptv') || keyword.startsWith('!pt') || keyword.startsWith('..')) {
             baseUrl = `https://api.themoviedb.org/3/tv/popular?api_key=9801b6b0548ad57581d111ea690c85c8&include_adult=false&page=`;
-        } else if (!keyword.startsWith('!anime')) {
+        } else if (!keyword.startsWith('!anime') && !keyword.startsWith('!a') && !keyword.startsWith('/')) {
             baseUrl = `https://api.themoviedb.org/3/search/multi?api_key=9801b6b0548ad57581d111ea690c85c8&query=${encodedKeyword}&include_adult=false&page=`;
         }
 
