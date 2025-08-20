@@ -474,7 +474,7 @@ async function searchResults(keyword) {
         }
 
         // --- AniList Section ---
-        if (keyword.startsWith('!anime') || keyword.startsWith('!a') || keyword.startsWith('/')) {
+        if (keyword.startsWith('!anime') || keyword.startsWith('!a') || keyword.startsWith('/') || keyword.startsWith('/a') || keyword.startsWith('/anime')) {
             aniData = await Anilist.getLatest({ isAdult: false });
         } else if (
             !keyword.startsWith('!trending') && !keyword.startsWith('!hot') && !keyword.startsWith('!tr') && !keyword.startsWith('!!') &&
