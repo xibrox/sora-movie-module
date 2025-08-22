@@ -345,9 +345,9 @@ async function searchResults(keyword) {
         let transformedResults = [];
 
         const keywordGroups = {
-            narucannon: ["/n", "!n", "/naru", "!naru", "/narucannon", "!narucannon"],
-            onepace: ["/o", "!o", "/op", "!op", "/one", "!one", "/onepace", "!onepace"],
-            anime: ["/a", "!a", "/anime", "!anime", "/"],
+            narucannon: ["!narucannon", "/narucannon", "!naru", "/naru", "!n", "/n"],
+            onepace: ["!onepace", "/onepace", "!one", "/one", "!op", "/op", "!o", "/o"],
+            anime: ["!anime", "!a", "/anime", "/a", "/"],
             trending: ["!trending", "!hot", "!tr", "!!"],
             topRatedMovie: ["!top-rated-movie", "!topmovie", "!tm", "??"],
             topRatedTV: ["!top-rated-tv", "!toptv", "!tt", "::"],

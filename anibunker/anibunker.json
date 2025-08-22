@@ -6,13 +6,14 @@
         "icon": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/profile.jpg",
         "url": "https://github.com/xibrox"
     },
-    "version": "1.0.1",
+    "version": "1.0.6",
     "language": "Portuguese",
-    "streamType": "HLS",
+    "streamType": "MP4",
     "quality": "1080p",
     "baseUrl": "https://anibunker.com/",
     "searchBaseUrl": "https://anibunker.com/search?q=%s",
-    "scriptUrl": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/anibunkerv2/anibunker.js",
+    "scriptUrl": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/anibunker/anibunker.js",
     "type": "anime",
+    "downloadSupport": true,
     "asyncJS": true
 }
