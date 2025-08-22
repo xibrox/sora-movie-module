@@ -344,6 +344,18 @@ async function searchResults(keyword) {
         let aniData = null;
         let transformedResults = [];
 
+        const skipTitleFilter = [
+            "!trending", "!hot", "!tr", "!!",
+            "!top-rated-movie", "!topmovie", "!tm", "?",
+            "!top-rated-tv", "!toptv", "!tt", "??",
+            "!popular-movie", "!popmovie", "!pm", ".",
+            "!popular-tv", "!poptv", "!pt", "..",
+            "!anime", "!a", "/", "/a", "/anime",
+            "/op", "!op", "/one", "!one", "/onepace", "!onepace",
+            "/n", "!n", "/naru", "!naru", "/narucannon", "!narucannon"
+        ];
+        const shouldFilter = !skipTitleFilter.some(cmd => keyword.toLowerCase().startsWith(cmd));
+
         // --- Narucannon ---
         if (
             keyword.toLowerCase().startsWith('/n') ||
@@ -493,7 +505,7 @@ async function searchResults(keyword) {
                 image: result.coverImage.extraLarge || result.coverImage.large || result.coverImage.medium || "",
                 href: `anime/${result.id}`,
             }))
-            .filter(r => r.title.toLowerCase().includes(keyword.toLowerCase()));
+            .filter(r => !shouldFilter || r.title.toLowerCase().includes(keyword.toLowerCase()));
         }
 
         // --- TMDB Section ---
@@ -545,7 +557,7 @@ async function searchResults(keyword) {
                     .filter(Boolean)
                     .filter(result => result.title !== "Overflow")
                     .filter(result => result.title !== "My Marriage Partner Is My Student, a Cocky Troublemaker")
-                    .filter(result => result.title.toLowerCase().includes(keyword.toLowerCase()))
+                    .filter(r => !shouldFilter || r.title.toLowerCase().includes(keyword.toLowerCase()))
             );
         }
 
