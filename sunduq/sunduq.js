@@ -344,27 +344,31 @@ async function searchResults(keyword) {
         let aniData = null;
         let transformedResults = [];
 
-        const skipTitleFilter = [
-            "!trending", "!hot", "!tr", "!!",
-            "!top-rated-movie", "!topmovie", "!tm", "?",
-            "!top-rated-tv", "!toptv", "!tt", "??",
-            "!popular-movie", "!popmovie", "!pm", ".",
-            "!popular-tv", "!poptv", "!pt", "..",
-            "!anime", "!a", "/", "/a", "/anime",
-            "/op", "!op", "/one", "!one", "/onepace", "!onepace",
-            "/n", "!n", "/naru", "!naru", "/narucannon", "!narucannon"
+        const keywordGroups = {
+            narucannon: ["/n", "!n", "/naru", "!naru", "/narucannon", "!narucannon"],
+            onepace: ["/o", "!o", "/op", "!op", "/one", "!one", "/onepace", "!onepace"],
+            anime: ["/a", "!a", "/anime", "!anime", "/"],
+            trending: ["!trending", "!hot", "!tr", "!!"],
+            topRatedMovie: ["!top-rated-movie", "!topmovie", "!tm", "??"],
+            topRatedTV: ["!top-rated-tv", "!toptv", "!tt", "::"],
+            popularMovie: ["!popular-movie", "!popmovie", "!pm", ";;"],
+            popularTV: ["!popular-tv", "!poptv", "!pt", "++"],
+        };
+
+        const skipTitleFilter = Object.values(keywordGroups).flat();
+
+        const otherMediaKeywords = [
+            ...keywordGroups.trending,
+            ...keywordGroups.topRatedMovie,
+            ...keywordGroups.topRatedTV,
+            ...keywordGroups.popularMovie,
+            ...keywordGroups.popularTV,
         ];
-        const shouldFilter = !skipTitleFilter.some(cmd => keyword.toLowerCase().startsWith(cmd));
+
+        const shouldFilter = !matchesKeyword(keyword, skipTitleFilter);
 
         // --- Narucannon ---
-        if (
-            keyword.toLowerCase().startsWith('/n') ||
-            keyword.toLowerCase().startsWith('!n') ||
-            keyword.toLowerCase().startsWith('/naru') ||
-            keyword.toLowerCase().startsWith('!naru') ||
-            keyword.toLowerCase().startsWith('/narucannon') ||
-            keyword.toLowerCase().startsWith('!narucannon')
-        ) {
+        if (matchesKeyword(keyword, keywordGroups.narucannon)) {
             const results = [];
 
             results.push({
@@ -384,16 +388,7 @@ async function searchResults(keyword) {
         }
 
         // --- One Pace Section ---
-        if (
-            keyword.toLowerCase().startsWith('/o') ||
-            keyword.toLowerCase().startsWith('!o') ||
-            keyword.toLowerCase().startsWith('/op') ||
-            keyword.toLowerCase().startsWith('!op') ||
-            keyword.toLowerCase().startsWith('/one') ||
-            keyword.toLowerCase().startsWith('!one') ||
-            keyword.toLowerCase().startsWith('/onepace') ||
-            keyword.toLowerCase().startsWith('!onepace')
-        ) {
+        if (matchesKeyword(keyword, keywordGroups.onepace)) {
             const results = [];
             const response = await soraFetch(`https://onepace.net/en/watch`);
             const html = await response.text();
@@ -486,14 +481,10 @@ async function searchResults(keyword) {
         }
 
         // --- AniList Section ---
-        if (keyword.startsWith('!anime') || keyword.startsWith('!a') || keyword.startsWith('/') || keyword.startsWith('/a') || keyword.startsWith('/anime')) {
+        if (matchesKeyword(keyword, keywordGroups.anime)) {
             aniData = await Anilist.getLatest({ isAdult: false });
         } else if (
-            !keyword.startsWith('!trending') && !keyword.startsWith('!hot') && !keyword.startsWith('!tr') && !keyword.startsWith('!!') &&
-            !keyword.startsWith('!top-rated-movie') && !keyword.startsWith('!topmovie') && !keyword.startsWith('!tm') && !keyword.startsWith('?') &&
-            !keyword.startsWith('!top-rated-tv') && !keyword.startsWith('!toptv') && !keyword.startsWith('!tt') && !keyword.startsWith('??') &&
-            !keyword.startsWith('!popular-movie') && !keyword.startsWith('!popmovie') && !keyword.startsWith('!pm') && !keyword.startsWith('.') &&
-            !keyword.startsWith('!popular-tv') && !keyword.startsWith('!poptv') && !keyword.startsWith('!pt') && !keyword.startsWith('..')
+            !matchesKeyword(keyword, otherMediaKeywords)
         ) {
             aniData = await Anilist.search(keyword, { isAdult: false });
         }
@@ -512,17 +503,17 @@ async function searchResults(keyword) {
         const encodedKeyword = encodeURIComponent(keyword);
         let baseUrl = null;
 
-        if (keyword.startsWith('!trending') || keyword.startsWith('!hot') || keyword.startsWith('!tr') || keyword.startsWith('!!')) {
+        if (matchesKeyword(keyword, keywordGroups.trending)) {
             baseUrl = `https://api.themoviedb.org/3/trending/all/week?api_key=9801b6b0548ad57581d111ea690c85c8&include_adult=false&page=`;
-        } else if (keyword.startsWith('!top-rated-movie') || keyword.startsWith('!topmovie') || keyword.startsWith('!tm') || keyword.startsWith('?')) {
+        } else if (matchesKeyword(keyword, keywordGroups.topRatedMovie)) {
             baseUrl = `https://api.themoviedb.org/3/movie/top_rated?api_key=9801b6b0548ad57581d111ea690c85c8&include_adult=false&page=`;
-        } else if (keyword.startsWith('!top-rated-tv') || keyword.startsWith('!toptv') || keyword.startsWith('!tt') || keyword.startsWith('??')) {
+        } else if (matchesKeyword(keyword, keywordGroups.topRatedTV)) {
             baseUrl = `https://api.themoviedb.org/3/tv/top_rated?api_key=9801b6b0548ad57581d111ea690c85c8&include_adult=false&page=`;
-        } else if (keyword.startsWith('!popular-movie') || keyword.startsWith('!popmovie') || keyword.startsWith('!pm') || keyword.startsWith('.')) {
+        } else if (matchesKeyword(keyword, keywordGroups.popularMovie)) {
             baseUrl = `https://api.themoviedb.org/3/movie/popular?api_key=9801b6b0548ad57581d111ea690c85c8&include_adult=false&page=`;
-        } else if (keyword.startsWith('!popular-tv') || keyword.startsWith('!poptv') || keyword.startsWith('!pt') || keyword.startsWith('..')) {
+        } else if (matchesKeyword(keyword, keywordGroups.popularTV)) {
             baseUrl = `https://api.themoviedb.org/3/tv/popular?api_key=9801b6b0548ad57581d111ea690c85c8&include_adult=false&page=`;
-        } else if (!keyword.startsWith('!anime') && !keyword.startsWith('!a') && !keyword.startsWith('/')) {
+        } else if (!matchesKeyword(keyword, keywordGroups.anime)) {
             baseUrl = `https://api.themoviedb.org/3/search/multi?api_key=9801b6b0548ad57581d111ea690c85c8&query=${encodedKeyword}&include_adult=false&page=`;
         }
 
@@ -567,6 +558,11 @@ async function searchResults(keyword) {
         console.log("Fetch error in searchResults: " + error);
         return JSON.stringify([{ title: "Error", image: "", href: "" }]);
     }
+}
+
+function matchesKeyword(keyword, commands) {
+    const lower = keyword.toLowerCase();
+    return commands.some(cmd => lower.startsWith(cmd.toLowerCase()));
 }
 
 async function extractDetails(url) {
