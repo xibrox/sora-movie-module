@@ -158,7 +158,7 @@ async function extractStreamUrl(url) {
         const dataText = await responseText.json();
 
         const servers = [
-            // 'primebox',
+            'primebox',
             'phoenix',
             'primenet',
             'kraken',
