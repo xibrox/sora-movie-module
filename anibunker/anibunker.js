@@ -184,7 +184,8 @@ async function extractStreamUrl(url) {
 
             const json = await response.json();
 
-            if (json.url.includes("short.icu") || json.url === "") continue;
+            // if (json.url.includes("short.icu") || json.url.includes("vk.ru") || json.url === "") continue;
+            if (!json.url || (!json.url.includes(".mp4") && !json.url.includes(".m3u8"))) continue;
 
             streams.push({
                 title: `Stream ${pid.toUpperCase()}`,
