@@ -184,7 +184,7 @@ async function extractStreamUrl(url) {
 
             const json = await response.json();
 
-            if (json.url.includes("short.icu")) continue;
+            if (json.url.includes("short.icu") || json.url === "") continue;
 
             streams.push({
                 title: `Stream ${pid.toUpperCase()}`,

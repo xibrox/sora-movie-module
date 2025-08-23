@@ -6,9 +6,9 @@
         "icon": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/profile.jpg",
         "url": "https://github.com/xibrox"
     },
-    "version": "1.0.7",
+    "version": "1.0.8",
     "language": "Portuguese",
-    "streamType": "MP4",
+    "streamType": "MP4 & HLS",
     "quality": "1080p",
     "baseUrl": "https://anibunker.com/",
     "searchBaseUrl": "https://anibunker.com/search?q=%s",
