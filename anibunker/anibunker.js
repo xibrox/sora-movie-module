@@ -165,26 +165,56 @@ async function extractStreamUrl(url) {
         const responseText = await soraFetch(url);
         const html = await responseText.text();
 
-        // const match = html.match(/<video[^>]+src="([^"]+)"/);
-        // const videoUrl = match[1];
-
         const matchId = html.match(/data-video-id="(\d+)"/);
         const videoId = matchId[1];
 
-        const playerId = "url_hd";
+        const playerId = ["url_hd", "url_hd_2"];
 
-        const response = await soraFetch(
-            `https://anibunker.com/php/loader.php`, 
-            { 
-                method: "POST", 
-                headers: { "Content-Type": "application/x-www-form-urlencoded", "Origin": "https://anibunker.com" }, 
-                body: `player_id=${playerId}&video_id=${videoId}&user_agent=Mozilla%2F5.0%20(Macintosh%3B%20Intel%20Mac%20OS%20X%2010.15%3B%20rv%3A141.0)%20Gecko%2F20100101%20Firefox%2F141.0` 
-            }
-        );
-        const json = await response.json();
+        let streams = [];
 
-        console.log(JSON.stringify(json));
-        return json.url;
+        for (const pid of playerId) {
+            const response = await soraFetch(
+                `https://anibunker.com/php/loader.php`, 
+                { 
+                    method: "POST", 
+                    headers: { "Content-Type": "application/x-www-form-urlencoded", "Origin": "https://anibunker.com" }, 
+                    body: `player_id=${pid}&video_id=${videoId}&user_agent=Mozilla%2F5.0%20(Macintosh%3B%20Intel%20Mac%20OS%20X%2010.15%3B%20rv%3A141.0)%20Gecko%2F20100101%20Firefox%2F141.0` 
+                }
+            );
+
+            const json = await response.json();
+
+            if (json.url.includes("short.icu")) continue;
+
+            streams.push({
+                title: `Stream ${pid.toUpperCase()}`,
+                streamUrl: json.url,
+                headers: {
+                    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:141.0) Gecko/20100101 Firefox/141.0"
+                }
+            });
+        }
+
+        const results = {
+            streams,
+            subtitles: ""
+        }
+
+        console.log(JSON.stringify(results));
+        return JSON.stringify(results);
+
+        // const response = await soraFetch(
+        //     `https://anibunker.com/php/loader.php`, 
+        //     { 
+        //         method: "POST", 
+        //         headers: { "Content-Type": "application/x-www-form-urlencoded", "Origin": "https://anibunker.com" }, 
+        //         body: `player_id=${playerId}&video_id=${videoId}&user_agent=Mozilla%2F5.0%20(Macintosh%3B%20Intel%20Mac%20OS%20X%2010.15%3B%20rv%3A141.0)%20Gecko%2F20100101%20Firefox%2F141.0` 
+        //     }
+        // );
+        // const json = await response.json();
+
+        // console.log(JSON.stringify(json));
+        // return json.url;
     } catch (error) {
         console.error('extractStreamUrl error:', error);
         return null;
