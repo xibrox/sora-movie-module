@@ -823,46 +823,46 @@ async function extractStreamUrl(url) {
             };
 
             // --- Vidzee fetch (parallel 5 servers) ---
-            // const fetchVidzee = async () => {
-            //     const vidzeePromises = Array.from({ length: 5 }, (_, i) => {
-            //         const sr = i + 1;
-            //         let apiUrl;
+            const fetchVidzee = async () => {
+                const vidzeePromises = Array.from({ length: 5 }, (_, i) => {
+                    const sr = i + 1;
+                    let apiUrl;
 
-            //         if (type === 'movie') {
-            //             apiUrl = `https://player.vidzee.wtf/api/server?id=${path}&sr=${sr}`;
-            //         } else if (type === 'tv') {
-            //             const [showId, seasonNumber, episodeNumber] = path.split('/');
-            //             apiUrl = `https://player.vidzee.wtf/api/server?id=${showId}&sr=${sr}&ss=${seasonNumber}&ep=${episodeNumber}`;
-            //         } else {
-            //             return null;
-            //         }
+                    if (type === 'movie') {
+                        apiUrl = `https://player.vidzee.wtf/api/server?id=${path}&sr=${sr}`;
+                    } else if (type === 'tv') {
+                        const [showId, seasonNumber, episodeNumber] = path.split('/');
+                        apiUrl = `https://player.vidzee.wtf/api/server?id=${showId}&sr=${sr}&ss=${seasonNumber}&ep=${episodeNumber}`;
+                    } else {
+                        return null;
+                    }
 
-            //         return soraFetch(apiUrl)
-            //             .then(res => res.json())
-            //             .then(data => {
-            //                 if (!data.url) return null;
-            //                 const stream = data.url.find(source =>
-            //                     source.lang?.toLowerCase() === 'english'
-            //                 );
-            //                 if (!stream) return null;
+                    return soraFetch(apiUrl)
+                        .then(res => res.json())
+                        .then(data => {
+                            if (!data.url) return null;
+                            const stream = data.url.find(source =>
+                                source.lang?.toLowerCase() === 'english'
+                            );
+                            if (!stream) return null;
 
-            //                 return {
-            //                     title: `Vidzee - ${data.provider}`,
-            //                     streamUrl: stream.link,
-            //                     headers: {
-            //                         'Origin': 'https://player.vidzee.wtf',
-            //                         'Referer': data.headers?.Referer || ''
-            //                     }
-            //                 };
-            //             })
-            //             .catch(() => null);
-            //     });
+                            return {
+                                title: `Vidzee - ${data.provider}`,
+                                streamUrl: stream.link,
+                                headers: {
+                                    'Origin': 'https://player.vidzee.wtf',
+                                    'Referer': data.headers?.Referer || ''
+                                }
+                            };
+                        })
+                        .catch(() => null);
+                });
 
-            //     const results = await Promise.allSettled(vidzeePromises);
-            //     return results
-            //         .filter(r => r.status === 'fulfilled' && r.value)
-            //         .map(r => r.value);
-            // };
+                const results = await Promise.allSettled(vidzeePromises);
+                return results
+                    .filter(r => r.status === 'fulfilled' && r.value)
+                    .map(r => r.value);
+            };
 
             // --- XPrime fetches ---
             const fetchXPrime = async () => {
@@ -1187,39 +1187,72 @@ async function extractStreamUrl(url) {
             };
 
             // --- RgShows fetch ---
-            // const fetchRgShows = async () => {
-            //     try {
-            //         let rgShowsUrl;
+            const fetchRgShows = async () => {
+                try {
+                    let streams = [];
+                    let rgShowsUrl;
 
-            //         if (type === 'movie') {
-            //             rgShowsUrl = `https://api.rgshows.me/main/movie/${path}`
-            //         } else if (type === 'tv') {
-            //             const [showId, seasonNumber, episodeNumber] = path.split('/');
-            //             rgShowsUrl = `https://api.rgshows.me/main/tv/${showId}/${seasonNumber}/${episodeNumber}`;
-            //         } else {
-            //             return null;
-            //         }
+                    if (type === 'movie') {
+                        rgShowsUrl = `https://api.rgshows.me/main/movie/${path}`;
+                    } else if (type === 'tv') {
+                        const [showId, seasonNumber, episodeNumber] = path.split('/');
+                        rgShowsUrl = `https://api.rgshows.me/main/tv/${showId}/${seasonNumber}/${episodeNumber}`;
+                    } else {
+                        return [];
+                    }
 
-            //         const headers = {
-            //             'Origin': 'https://www.vidsrc.wtf',
-            //             'Referer': 'https://www.vidsrc.wtf/'
-            //         };
+                    const headers = {
+                        'Origin': 'https://www.vidsrc.wtf',
+                        'Referer': 'https://www.vidsrc.wtf/'
+                    };
 
-            //         const rgShowsResponse = await soraFetch(rgShowsUrl, { headers });
-            //         const rgShowsData = await rgShowsResponse.json();
+                    // --- Main RgShows ---
+                    try {
+                        const rgShowsResponse = await soraFetch(rgShowsUrl, { headers });
+                        const rgShowsData = await rgShowsResponse.json();
 
-            //         if (rgShowsData && rgShowsData.stream) {
-            //             return [{
-            //                 title: `RgShows`,
-            //                 streamUrl: rgShowsData.stream.url,
-            //                 headers: { Referer: "https://www.vidsrc.wtf/" }
-            //             }];
-            //         }
-            //     } catch (e) {
-            //         console.log('RgShows fetch failed silently:', e);
-            //     }
-            //     return [];
-            // };
+                        if (rgShowsData && rgShowsData.stream) {
+                            streams.push({
+                                title: `RgShows`,
+                                streamUrl: rgShowsData.stream.url,
+                                headers: { Referer: "https://www.vidsrc.wtf/" }
+                            });
+                        }
+                    } catch (err) {
+                        console.log("Main RgShows fetch failed:", err);
+                    }
+
+                    // --- Multi Language RgShows ---
+                    if (type === 'movie') {
+                        rgShowsUrl = `https://hindi.rgshows.me/movie/${path}`;
+                    } else if (type === 'tv') {
+                        const [showId, seasonNumber, episodeNumber] = path.split('/');
+                        rgShowsUrl = `https://hindi.rgshows.me/tv/${showId}/${seasonNumber}/${episodeNumber}`;
+                    }
+
+                    try {
+                        const rgShowsLanguagesResponse = await soraFetch(rgShowsUrl, { headers });
+                        const rgShowsLanguagesData = await rgShowsLanguagesResponse.json();
+
+                        if (rgShowsLanguagesData && rgShowsLanguagesData.streams) {
+                            streams = streams.concat(
+                                rgShowsLanguagesData.streams.map(stream => ({
+                                    title: `RgShows - ${stream.language || 'Unknown'}`,
+                                    streamUrl: stream.url,
+                                    headers: stream.headers || { Referer: "https://www.vidsrc.wtf/" }
+                                }))
+                            );
+                        }
+                    } catch (err) {
+                        console.log("Hindi RgShows fetch failed:", err);
+                    }
+
+                    return streams;
+                } catch (e) {
+                    console.log('RgShows fetch failed silently:', e);
+                    return [];
+                }
+            };
 
             // --- Vidrock.net ---
             const fetchVidrock = async () => {
@@ -1350,21 +1383,21 @@ async function extractStreamUrl(url) {
             // Run all fetches in parallel
             const [
                 vidnestStreams,
-                // vidzeeStreams,
+                vidzeeStreams,
                 xprimeStreams,
                 vixSrcStreams,
                 vidapiStreams,
-                // rgShowsStreams,
+                rgShowsStreams,
                 vidrockStreams,
                 cloudStreamProStreams,
                 subtitleUrl
             ] = await Promise.allSettled([
                 fetchVidnest(),
-                // fetchVidzee(),
+                fetchVidzee(),
                 fetchXPrime(),
                 fetchVixSrc(),
                 fetchVidapi(),
-                // fetchRgShows(),
+                fetchRgShows(),
                 fetchVidrock(),
                 fetchCloudStreamPro(),
                 fetchSubtitles()
@@ -1372,11 +1405,11 @@ async function extractStreamUrl(url) {
 
             // Collect streams from all sources
             streams.push(...(vidnestStreams || []));
-            // streams.push(...(vidzeeStreams || []));
+            streams.push(...(vidzeeStreams || []));
             streams.push(...(xprimeStreams || []));
             streams.push(...(vixSrcStreams || []));
             streams.push(...(vidapiStreams || []));
-            // streams.push(...(rgShowsStreams || []));
+            streams.push(...(rgShowsStreams || []));
             streams.push(...(vidrockStreams || []));
             streams.push(...(cloudStreamProStreams || []));
 
