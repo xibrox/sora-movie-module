@@ -779,43 +779,105 @@ async function extractStreamUrl(url) {
             // --- Movies and TV shows ---
             const fetchVidnest = async () => {
                 try {
-                    let vidnestUrl;
-
-                    if (type === 'movie') {
-                        vidnestUrl = `https://embed.madaraverse.online/hollymoviehd/movie/${path}`
-                    } else if (type === 'tv') {
-                        const [showId, seasonNumber, episodeNumber] = path.split('/');
-                        vidnestUrl = `https://embed.madaraverse.online/hollymoviehd/tv/${showId}/${seasonNumber}/${episodeNumber}`;
-                    } else {
-                        return null;
-                    }
-
+                    const proxyUrl = `https://proxy.nhdapi.xyz/proxy?url=`;
                     const headers = {
                         'Referer': 'https://vidnest.fun/',
                         'Origin': 'https://vidnest.fun'
                     };
-                    const data = await soraFetch(vidnestUrl, { headers }).then(res => res.json());
 
-                    if (!data?.sources || !Array.isArray(data.sources)) {
-                        return [];
+                    const [showId, seasonNumber, episodeNumber] =
+                        type === "tv" ? path.split("/") : [];
+
+                    // helper to safely fetch JSON
+                    const safeFetch = async (url, opts) => {
+                        try {
+                            const res = await soraFetch(url, opts);
+                            return await res.json();
+                        } catch (err) {
+                            return null;
+                        }
+                    };
+
+                    // build all endpoints
+                    const endpoints = {
+                        hollymovie: type === "movie"
+                            ? `https://backend.vidnest.fun/hollymoviehd/movie/${path}`
+                            : `https://backend.vidnest.fun/hollymoviehd/tv/${showId}/${seasonNumber}/${episodeNumber}`,
+
+                        official: type === "movie"
+                            ? `https://backend.vidnest.fun/official/movie/${path}`
+                            : `https://backend.vidnest.fun/official/tv/${showId}/${seasonNumber}/${episodeNumber}`,
+
+                        flixhq: type === "movie"
+                            ? `https://backend.vidnest.fun/flixhq/movie/${path}`
+                            : `https://backend.vidnest.fun/flixhq/tv/${showId}/${seasonNumber}/${episodeNumber}`,
+
+                        allmovies: type === "movie"
+                            ? `https://backend.vidnest.fun/allmovies/movie/${path}`
+                            : `https://backend.vidnest.fun/allmovies/tv/${showId}/${seasonNumber}/${episodeNumber}`
+                    };
+
+                    // run everything in parallel
+                    const [
+                        hollyData, 
+                        // officialData, 
+                        flixhqData, 
+                        allMoviesData
+                    ] = await Promise.allSettled([
+                            safeFetch(endpoints.hollymovie, { headers }),
+                            // safeFetch(endpoints.official, { headers }),
+                            safeFetch(endpoints.flixhq, { headers }),
+                            safeFetch(endpoints.allmovies, { headers })
+                        ]).then(results => results.map(r => r.status === "fulfilled" ? r.value : null));
+
+                    let streams = [];
+
+                    // --- HollymovieHD ---
+                    if (hollyData?.sources && Array.isArray(hollyData.sources)) {
+                        streams.push(
+                            ...hollyData.sources
+                                .filter(src => src?.file)
+                                .map(src => ({
+                                    title: `Vidnest - ${src.label || "Unknown"}`,
+                                    streamUrl: `${proxyUrl}${src.file}`,
+                                    headers
+                                }))
+                        );
                     }
-                    const vidnestStreamList = data.sources.map(source => source.file).filter(Boolean);
 
-                    const proxyUrl = `https://proxy.nhdapi.xyz/proxy?url=`;
 
-                    if (vidnestStreamList?.length === 1) {
-                        return [{
-                            title: 'Vidnest',
-                            streamUrl: `${proxyUrl}${vidnestStreamList[0]}`,
-                            headers
-                        }];
-                    } else {
-                        return vidnestStreamList?.map((url, i) => ({
-                            title: `Vidnest - ${i + 1}`,
-                            streamUrl: `${proxyUrl}${url}`,
-                            headers
-                        }));
+                    // // --- Official ---
+                    // if (officialData?.stream?.url) {
+                    //     streams.push({
+                    //         title: "Vidnest Official",
+                    //         streamUrl: `${proxyUrl}${officialData.stream.url}`,
+                    //         headers
+                    //     });
+                    // }
+
+                    // --- FlixHQ ---
+                    if (flixhqData?.url) {
+                        streams.push({
+                            title: "Vidnest FlixHQ",
+                            streamUrl: flixhqData.url,
+                            headers: flixhqData.headers || headers
+                        });
                     }
+
+                    // --- AllMovies ---
+                    if (allMoviesData?.streams && Array.isArray(allMoviesData.streams)) {
+                        streams.push(
+                            ...allMoviesData.streams
+                                .filter(s => s?.url)
+                                .map(s => ({
+                                    title: `Vidnest All Movies - ${s.language || "Unknown"}`,
+                                    streamUrl: s.url,
+                                    headers: s.headers || headers
+                                }))
+                        );
+                    }
+
+                    return streams;
                 } catch (e) {
                     console.log("Vidnest stream extraction failed silently:", e);
                     return [];
