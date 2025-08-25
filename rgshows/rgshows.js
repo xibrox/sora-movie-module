@@ -210,46 +210,72 @@ async function extractStreamUrl(url) {
         let subtitles = "";
 
         if (type === 'movie' || type === 'tv') {
-            // --- Vidzee fetch (parallel 5 servers) ---
-            const fetchVidzee = async () => {
-                const vidzeePromises = Array.from({ length: 5 }, (_, i) => {
-                    const sr = i + 1;
-                    let apiUrl;
+            // --- RgShows fetch ---
+            const fetchRgShows = async () => {
+                try {
+                    let streams = [];
+                    let rgShowsUrl;
 
                     if (type === 'movie') {
-                        apiUrl = `https://player.vidzee.wtf/api/server?id=${path}&sr=${sr}`;
+                        rgShowsUrl = `https://api.rgshows.me/main/movie/${path}`;
                     } else if (type === 'tv') {
                         const [showId, seasonNumber, episodeNumber] = path.split('/');
-                        apiUrl = `https://player.vidzee.wtf/api/server?id=${showId}&sr=${sr}&ss=${seasonNumber}&ep=${episodeNumber}`;
+                        rgShowsUrl = `https://api.rgshows.me/main/tv/${showId}/${seasonNumber}/${episodeNumber}`;
                     } else {
-                        return null;
+                        return [];
                     }
 
-                    return soraFetch(apiUrl)
-                        .then(res => res.json())
-                        .then(data => {
-                            if (!data.url) return null;
-                            const stream = data.url.find(source =>
-                                source.lang?.toLowerCase() === 'english'
+                    const headers = {
+                        'Origin': 'https://www.vidsrc.wtf',
+                        'Referer': 'https://www.vidsrc.wtf/'
+                    };
+
+                    // --- Main RgShows ---
+                    try {
+                        const rgShowsResponse = await soraFetch(rgShowsUrl, { headers });
+                        const rgShowsData = await rgShowsResponse.json();
+
+                        if (rgShowsData && rgShowsData.stream) {
+                            streams.push({
+                                title: `RgShows`,
+                                streamUrl: rgShowsData.stream.url,
+                                headers: { Referer: "https://www.vidsrc.wtf/" }
+                            });
+                        }
+                    } catch (err) {
+                        console.log("Main RgShows fetch failed:", err);
+                    }
+
+                    // --- Multi Language RgShows ---
+                    if (type === 'movie') {
+                        rgShowsUrl = `https://hindi.rgshows.me/movie/${path}`;
+                    } else if (type === 'tv') {
+                        const [showId, seasonNumber, episodeNumber] = path.split('/');
+                        rgShowsUrl = `https://hindi.rgshows.me/tv/${showId}/${seasonNumber}/${episodeNumber}`;
+                    }
+
+                    try {
+                        const rgShowsLanguagesResponse = await soraFetch(rgShowsUrl, { headers });
+                        const rgShowsLanguagesData = await rgShowsLanguagesResponse.json();
+
+                        if (rgShowsLanguagesData && rgShowsLanguagesData.streams) {
+                            streams = streams.concat(
+                                rgShowsLanguagesData.streams.map(stream => ({
+                                    title: `RgShows - ${stream.language || 'Unknown'}`,
+                                    streamUrl: stream.url,
+                                    headers: stream.headers || { Referer: "https://www.vidsrc.wtf/" }
+                                }))
                             );
-                            if (!stream) return null;
+                        }
+                    } catch (err) {
+                        console.log("Hindi RgShows fetch failed:", err);
+                    }
 
-                            return {
-                                title: `Vidzee - ${data.provider}`,
-                                streamUrl: stream.link,
-                                headers: {
-                                    'Origin': 'https://player.vidzee.wtf',
-                                    'Referer': data.headers?.Referer || ''
-                                }
-                            };
-                        })
-                        .catch(() => null);
-                });
-
-                const results = await Promise.allSettled(vidzeePromises);
-                return results
-                    .filter(r => r.status === 'fulfilled' && r.value)
-                    .map(r => r.value);
+                    return streams;
+                } catch (e) {
+                    console.log('RgShows fetch failed silently:', e);
+                    return [];
+                }
             };
 
             // --- Subtitle fetch ---
@@ -290,15 +316,15 @@ async function extractStreamUrl(url) {
 
             // Run all fetches in parallel
             const [
-                vidzeeStreams,
+                rgShowsStreams,
                 subtitleUrl
             ] = await Promise.allSettled([
-                fetchVidzee(),
+                fetchRgShows(),
                 fetchSubtitles()
             ]).then(results => results.map(r => r.status === 'fulfilled' ? r.value : (Array.isArray(r.value) ? [] : "")));
 
             // Collect streams from all sources
-            streams.push(...(vidzeeStreams || []));
+            streams.push(...(rgShowsStreams || []));
 
             if (subtitleUrl) {
                 subtitles = subtitleUrl;
