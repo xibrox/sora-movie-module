@@ -6,13 +6,14 @@
         "icon": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/profile.jpg",
         "url": "https://github.com/xibrox"
     },
-    "version": "2.0.2",
+    "version": "2.1.0",
     "language": "French",
     "streamType": "MP4",
     "quality": "1080p - 720p - 480p",
     "baseUrl": "https://pixeldrain.net/",
     "searchBaseUrl": "https://onepace.net/fr/watch",
-    "scriptUrl": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/onepace/onepaceFr.js",
+    "scriptUrl": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/onepace/onepaceFr.sora",
     "type": "anime",
-    "asyncJS": true
+    "asyncJS": true,
+    "encrypted": true
 }

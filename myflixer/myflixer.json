@@ -6,14 +6,15 @@
         "icon": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/profile.jpg",
         "url": "https://github.com/xibrox"
     },
-    "version": "1.2.4",
+    "version": "1.3.0",
     "language": "English",
     "streamType": "HLS",
     "quality": "1080p",
     "baseUrl": "https://videostr.net/",
     "searchBaseUrl": "https://myflixerz.to/search/%s",
-    "scriptUrl": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/myflixer/myflixer.js",
+    "scriptUrl": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/myflixer/myflixer.sora",
     "type": "anime/shows/movies",
     "asyncJS": true,
+    "encrypted": true,
     "softsub": true
 }

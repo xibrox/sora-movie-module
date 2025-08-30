@@ -6,14 +6,15 @@
         "icon": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/profile.jpg",
         "url": "https://github.com/xibrox"
     },
-    "version": "2.0.2",
+    "version": "2.1.0",
     "language": "Polish (HARDSUB)",
     "streamType": "MP4",
     "quality": "1080p",
     "baseUrl": "https://www.lycoris.cafe/",
     "searchBaseUrl": "https://www.lycoris.cafe/api/search?page=1&pageSize=12&search=%s&sortField=popularity&sortDirection=desc&preferRomaji=true",
-    "scriptUrl": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/lycoriscafe/lycoriscafe.js",
+    "scriptUrl": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/lycoriscafe/lycoriscafe.sora",
     "type": "anime",
     "asyncJS": true,
+    "encrypted": true,
     "softsub": true
 }

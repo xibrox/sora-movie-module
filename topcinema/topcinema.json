@@ -6,14 +6,15 @@
         "icon": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/profile.jpg",
         "url": "https://github.com/xibrox"
     },
-    "version": "1.0.8",
+    "version": "1.1.0",
     "language": "Arabic",
     "streamType": "HLS & MP4",
     "quality": "1080p",
     "baseUrl": "https://web6.topcinema.cam/",
     "searchBaseUrl": "https://web6.topcinema.cam/search/?query=%s&type=all",
-    "scriptUrl": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/topcinema/topcinema.js",
+    "scriptUrl": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/topcinema/topcinema.sora",
     "type": "anime/shows/movies",
     "asyncJS": true,
+    "encrypted": true,
     "softsub": true
 }

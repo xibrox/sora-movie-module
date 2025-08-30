@@ -6,15 +6,16 @@
         "icon": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/profile.jpg",
         "url": "https://github.com/xibrox"
     },
-    "version": "1.0.4",
+    "version": "1.1.0",
     "language": "English",
     "streamType": "HLS",
     "quality": "1080p",
     "baseUrl": "https://tanime.tv/",
     "searchBaseUrl": "https://tanime.tv/api/search?keyword=%s",
-    "scriptUrl": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/tanime/tanime.js",
+    "scriptUrl": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/tanime/tanime.sora",
     "type": "anime",
     "downloadSupport": false,
     "asyncJS": true,
+    "encrypted": true,
     "softsub": true
 }
