@@ -1,0 +1,19 @@
+{
+    "sourceName": "Autoembed",
+    "iconUrl": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/autoembed/icon.png",
+    "author": {
+        "name": "ibro",
+        "icon": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/profile.jpg",
+        "url": "https://github.com/xibrox"
+    },
+    "version": "1.0.2",
+    "language": "English",
+    "streamType": "HLS",
+    "quality": "1080p",
+    "baseUrl": "https://api.themoviedb.org/",
+    "searchBaseUrl": "https://api.themoviedb.org/3/search/multi?api_key=453752deba3272cd109112cd41127fd8&query=%s",
+    "scriptUrl": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/autoembed/autoembed.js",
+    "type": "movies",
+    "asyncJS": true,
+    "softsub": true
+}

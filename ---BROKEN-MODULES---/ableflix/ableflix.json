@@ -1,0 +1,18 @@
+{
+    "sourceName": "AbleFlix",
+    "iconUrl": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/ableflix/icon.png",
+    "author": {
+        "name": "ibro",
+        "icon": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/profile.jpg",
+        "url": "https://github.com/xibrox"
+    },
+    "version": "1.1.4",
+    "language": "English",
+    "streamType": "HLS",
+    "quality": "1080p",
+    "baseUrl": "https://ableflix.cc/",
+    "searchBaseUrl": "https://api.themoviedb.org/3/search/multi?api_key=653bb8af90162bd98fc7ee32bcbbfb3d&query=%s",
+    "scriptUrl": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/ableflix/ableflix.js",
+    "type": "anime/shows/movies",
+    "asyncJS": true
+}

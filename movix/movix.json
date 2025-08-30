@@ -1,0 +1,19 @@
+{
+    "sourceName": "Movix",
+    "iconUrl": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/movix/icon.png",
+    "author": {
+        "name": "ibro",
+        "icon": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/profile.jpg",
+        "url": "https://github.com/xibrox"
+    },
+    "version": "1.0.0",
+    "language": "French",
+    "streamType": "HLS",
+    "quality": "1080p",
+    "baseUrl": "https://movix.site/",
+    "searchBaseUrl": "https://api.themoviedb.org/3/search/multi?api_key=f3d757824f08ea2cff45eb8f47ca3a1e&query=%s&language=fr-FR&page=1&include_adult=false&sort_by=popularity.desc",
+    "scriptUrl": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/movix/movix.js",
+    "type": "shows/movies",
+    "asyncJS": true,
+    "softsub": true
+}

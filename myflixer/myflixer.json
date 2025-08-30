@@ -1,0 +1,19 @@
+{
+    "sourceName": "MyFlixer",
+    "iconUrl": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/myflixer/icon.png",
+    "author": {
+        "name": "ibro",
+        "icon": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/profile.jpg",
+        "url": "https://github.com/xibrox"
+    },
+    "version": "1.2.4",
+    "language": "English",
+    "streamType": "HLS",
+    "quality": "1080p",
+    "baseUrl": "https://videostr.net/",
+    "searchBaseUrl": "https://myflixerz.to/search/%s",
+    "scriptUrl": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/myflixer/myflixer.js",
+    "type": "anime/shows/movies",
+    "asyncJS": true,
+    "softsub": true
+}

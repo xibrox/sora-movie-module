@@ -1,0 +1,18 @@
+{
+    "sourceName": "KDramaHood (BROKEN)",
+    "iconUrl": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/kdramahood/icon.png",
+    "author": {
+        "name": "ibro",
+        "icon": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/profile.jpg",
+        "url": "https://github.com/xibrox"
+    },
+    "version": "2.0.1",
+    "language": "Korean",
+    "streamType": "MP4",
+    "quality": "1080p",
+    "baseUrl": "https://kdramahood.com/",
+    "searchBaseUrl": "https://kdramahood.com/?s=%s",
+    "scriptUrl": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/kdramahood/kdramahood.js",
+    "type": "shows/movies",
+    "softsub": true
+}

@@ -1,0 +1,19 @@
+{
+    "sourceName": "Anify",
+    "iconUrl": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/anify/icon.png",
+    "author": {
+        "name": "ibro",
+        "icon": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/profile.jpg",
+        "url": "https://github.com/xibrox"
+    },
+    "version": "1.0.3",
+    "language": "English",
+    "streamType": "HLS",
+    "quality": "1080p",
+    "baseUrl": "https://anify.to/",
+    "searchBaseUrl": "https://anify.to/search-ajax",
+    "scriptUrl": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/anify/anify.js",
+    "type": "anime",
+    "asyncJS": true,
+    "softsub": true
+}

@@ -1,0 +1,18 @@
+{
+    "sourceName": "AnimeZ",
+    "iconUrl": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/animez/icon.png",
+    "author": {
+        "name": "ibro",
+        "icon": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/profile.jpg",
+        "url": "https://github.com/xibrox"
+    },
+    "version": "1.0.2",
+    "language": "English",
+    "streamType": "HLS",
+    "quality": "1080p",
+    "baseUrl": "https://animez.org/",
+    "searchBaseUrl": "https://animez.org/?act=search&f[status]=all&f[sortby]=lastest-chap&f[keyword]=%s",
+    "scriptUrl": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/animez/animez.js",
+    "type": "anime",
+    "asyncJS": true
+}

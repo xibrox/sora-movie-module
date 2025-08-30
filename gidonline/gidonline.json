@@ -1,0 +1,20 @@
+{
+    "sourceName": "GidOnline",
+    "iconUrl": "https://files.catbox.moe/vo4xzy.png",
+    "author": {
+        "name": "Cufiy",
+        "icon": "https://files.catbox.moe/ttj4fc.gif",
+        "url": "https://github.com/JMcrafter26"
+    },
+    "version": "1.0.0",
+    "language": "Russian",
+    "streamType": "HLS",
+    "quality": "1080p",
+    "baseUrl": "https://gidonline.eu/",
+    "searchBaseUrl": "https://gidonline.eu/search=%s",
+    "scriptUrl": "https://raw.githubusercontent.com/JMcrafter26/sora-modules/refs/heads/main/modules/gidonline/gidonline.js",
+    "type": "anime/movies/shows",
+    "downloadSupport": false,
+    "asyncJS": true,
+    "softsub": true
+}

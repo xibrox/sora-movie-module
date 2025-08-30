@@ -1,0 +1,18 @@
+{
+    "sourceName": "Yummy Anime (Clone - SovetRomantica)",
+    "iconUrl": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/yummy-anime/icon.png",
+    "author": {
+        "name": "ibro",
+        "icon": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/profile.jpg",
+        "url": "https://github.com/xibrox"
+    },
+    "version": "2.0.0",
+    "language": "Russian (HARDSUB)",
+    "streamType": "HLS",
+    "quality": "1080p",
+    "baseUrl": "https://yummy-anime.ru/",
+    "searchBaseUrl": "https://yummy-anime.ru/api/search?q=%s&limit=20&offset=0",
+    "scriptUrl": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/yummy-anime/yummy-anime.js",
+    "type": "anime",
+    "asyncJS": true
+}

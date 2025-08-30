@@ -1,0 +1,19 @@
+{
+    "sourceName": "Movies7.im",
+    "iconUrl": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/movies7im/icon.png",
+    "author": {
+        "name": "ibro",
+        "icon": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/profile.jpg",
+        "url": "https://github.com/xibrox"
+    },
+    "version": "1.0.0",
+    "language": "English",
+    "streamType": "HLS",
+    "quality": "1080p",
+    "baseUrl": "https://movies7.im/",
+    "searchBaseUrl": "https://movies7.im/api/search-suggestions.php?q=%s",
+    "scriptUrl": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/movies7im/movies7im.js",
+    "type": "shows/movies",
+    "asyncJS": true,
+    "softsub": true
+}

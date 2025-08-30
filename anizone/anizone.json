@@ -1,0 +1,20 @@
+{
+    "sourceName": "Anizone",
+    "iconUrl": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/anizone/icon.png",
+    "author": {
+        "name": "ibro",
+        "icon": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/profile.jpg",
+        "url": "https://github.com/xibrox"
+    },
+    "version": "1.0.6",
+    "language": "English",
+    "streamType": "HLS",
+    "quality": "1080p",
+    "baseUrl": "https://anizone.to/",
+    "searchBaseUrl": "https://anizone.to/anime?search=%s",
+    "scriptUrl": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/anizone/anizone.js",
+    "type": "anime",
+    "note": "Use default (Apple Player) or external player to watch the streams (e.g. VLC).",
+    "asyncJS": true,
+    "softsub": true
+}

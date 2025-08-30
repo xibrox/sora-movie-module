@@ -1,0 +1,19 @@
+{
+    "sourceName": "KissAssAnime",
+    "iconUrl": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/kaa/icon.png",
+    "author": {
+        "name": "ibro",
+        "icon": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/profile.jpg",
+        "url": "https://github.com/xibrox"
+    },
+    "version": "1.0.0",
+    "language": "English",
+    "streamType": "HLS",
+    "quality": "1080p",
+    "baseUrl": "https://uaserial.me/",
+    "searchBaseUrl": "https://uaserial.me/search?query=%s",
+    "scriptUrl": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/kaa/kaa.js",
+    "type": "anime/shows/movies",
+    "asyncJS": true,
+    "softsub": true
+}

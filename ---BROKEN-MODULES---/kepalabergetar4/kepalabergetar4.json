@@ -1,0 +1,19 @@
+{
+    "sourceName": "Kepala Bergetar 4",
+    "iconUrl": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/kepalabergetar4/icon.png",
+    "author": {
+        "name": "ibro",
+        "icon": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/profile.jpg",
+        "url": "https://github.com/xibrox"
+    },
+    "version": "1.0.2",
+    "language": "Malay",
+    "streamType": "HLS",
+    "quality": "720p",
+    "baseUrl": "https://kepalabergetardramas.cfd/",
+    "searchBaseUrl": "https://kepalabergetardramas.cfd/?s=keluarga",
+    "scriptUrl": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/kepalabergetar4/kepalabergetar4.js",
+    "type": "shows/movies",
+    "asyncJS": true,
+    "softsub": true
+}

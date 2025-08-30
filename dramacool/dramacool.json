@@ -1,0 +1,19 @@
+{
+    "sourceName": "DRAMA COOL",
+    "iconUrl": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/dramacool/icon.png",
+    "author": {
+        "name": "ibro",
+        "icon": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/profile.jpg",
+        "url": "https://github.com/xibrox"
+    },
+    "version": "1.0.2",
+    "language": "Korean",
+    "streamType": "HLS",
+    "quality": "1080p",
+    "baseUrl": "https://dramacool.com.kg/",
+    "searchBaseUrl": "https://dramacool.com.kg/?s=%s&content_type=anime",
+    "scriptUrl": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/dramacool/dramacool.js",
+    "type": "shows/movies",
+    "asyncJS": true,
+    "softsub": true
+}

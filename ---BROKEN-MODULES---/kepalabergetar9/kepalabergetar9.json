@@ -1,0 +1,19 @@
+{
+    "sourceName": "Kepala Bergetar 9",
+    "iconUrl": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/kepalabergetar9/icon.png",
+    "author": {
+        "name": "ibro",
+        "icon": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/profile.jpg",
+        "url": "https://github.com/xibrox"
+    },
+    "version": "1.0.5",
+    "language": "Malay",
+    "streamType": "HLS",
+    "quality": "720p",
+    "baseUrl": "https://ww31.kepalabergetar9.com/",
+    "searchBaseUrl": "https://ww31.kepalabergetar9.com/?s=%s",
+    "scriptUrl": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/kepalabergetar9/kepalabergetar9.js",
+    "type": "shows/movies",
+    "asyncJS": true,
+    "softsub": true
+}

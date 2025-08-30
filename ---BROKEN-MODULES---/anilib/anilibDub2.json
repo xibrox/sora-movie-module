@@ -1,0 +1,18 @@
+{
+    "sourceName": "AnimeLIB (DUB - First Stream)",
+    "iconUrl": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/anilib/icon.png",
+    "author": {
+        "name": "ibro",
+        "icon": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/profile.jpg",
+        "url": "https://github.com/xibrox"
+    },
+    "version": "1.0.1",
+    "language": "Russian (DUB)",
+    "streamType": "MP4",
+    "quality": "4K",
+    "baseUrl": "https://anilib.me/",
+    "searchBaseUrl": "https://api2.mangalib.me/api/anime?q=%s",
+    "scriptUrl": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/anilib/anilibDub2.js",
+    "type": "anime",
+    "asyncJS": true
+}

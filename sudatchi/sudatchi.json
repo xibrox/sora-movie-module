@@ -1,0 +1,19 @@
+{
+    "sourceName": "Sudatchi",
+    "iconUrl": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/sudatchi/icon.png",
+    "author": {
+        "name": "ibro",
+        "icon": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/profile.jpg",
+        "url": "https://github.com/xibrox"
+    },
+    "version": "2.0.4",
+    "language": "Spanish",
+    "streamType": "HLS",
+    "quality": "1080p",
+    "baseUrl": "https://sudatchi-api.vercel.app/",
+    "searchBaseUrl": "https://sudatchi-api.vercel.app/api/search?q=%s",
+    "scriptUrl": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/sudatchi/sudatchi.js",
+    "type": "anime",
+    "note": "Use default (Apple Player) or external player to watch the streams (e.g. VLC).",
+    "asyncJS": true
+}

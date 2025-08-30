@@ -1,0 +1,18 @@
+{
+    "sourceName": "Development",
+    "iconUrl": "https://cdn-icons-png.flaticon.com/512/3953/3953226.png",
+    "author": {
+        "name": "ibro",
+        "icon": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/profile.jpg",
+        "url": "https://github.com/xibrox"
+    },
+    "version": "1.0.0",
+    "language": "Dev",
+    "streamType": "Dev",
+    "quality": "Dev",
+    "baseUrl": "https://google.com/",
+    "searchBaseUrl": "https://google.com/?q=%s",
+    "scriptUrl": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/dev/dev.js",
+    "type": "anime",
+    "asyncJS": true
+}

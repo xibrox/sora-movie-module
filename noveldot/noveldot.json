@@ -1,0 +1,19 @@
+{
+    "sourceName": "NovelDot",
+    "iconUrl": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/noveldot/icon.png",
+    "author": {
+        "name": "ibro",
+        "icon": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/profile.jpg",
+        "url": "https://github.com/xibrox"
+    },
+    "version": "1.0.3",
+    "language": "English",
+    "streamType": "novels",
+    "quality": "N/A",
+    "baseUrl": "https://noveldot.com/",
+    "searchBaseUrl": "https://www.noveldot.com/novel/lnsearchlive/index.php",
+    "scriptUrl": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/noveldot/noveldot.js",
+    "type": "novels",
+    "asyncJS": true,
+    "novel": true
+}

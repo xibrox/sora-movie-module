@@ -1,0 +1,19 @@
+{
+    "sourceName": "Anime-Portal",
+    "iconUrl": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/animeportal/icon.png",
+    "author": {
+        "name": "ibro",
+        "icon": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/profile.jpg",
+        "url": "https://github.com/xibrox"
+    },
+    "version": "1.0.2",
+    "language": "Russian",
+    "streamType": "HLS",
+    "quality": "1080p",
+    "baseUrl": "https://animeportal.su/",
+    "searchBaseUrl": "https://animeportal.su/?do=search&subaction=search&search_start=0&full_search=0&story=%s",
+    "scriptUrl": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/animeportal/animeportal.js",
+    "type": "anime",
+    "asyncJS": true,
+    "softsub": true
+}
