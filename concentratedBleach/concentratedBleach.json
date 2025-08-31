@@ -6,7 +6,7 @@
         "icon": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/profile.jpg",
         "url": "https://github.com/xibrox"
     },
-    "version": "1.0.4",
+    "version": "1.0.5",
     "language": "English",
     "streamType": "MP4",
     "quality": "1080p - 720p - 480p",
@@ -15,5 +15,6 @@
     "scriptUrl": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/concentratedBleach/concentratedBleach.sora",
     "type": "anime",
     "asyncJS": true,
-    "encrypted": true
+    "encrypted": true,
+    "downloadSupport": true
 }
