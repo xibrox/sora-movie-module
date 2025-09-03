@@ -1,616 +1,582 @@
-// async function searchResults(keyword) {
-//     try {
-//         const encodedKeyword = encodeURIComponent(keyword);
-//         const responseText = await soraFetch(`https://api.themoviedb.org/3/search/multi?api_key=68e094699525b18a70bab2f86b1fa706&query=${encodedKeyword}`);
-//         const data = await responseText.json();
+async function searchResults(keyword) {
+    try {
+        const encodedKeyword = encodeURIComponent(keyword);
+        const responseText = await soraFetch(`https://api.themoviedb.org/3/search/multi?api_key=68e094699525b18a70bab2f86b1fa706&query=${encodedKeyword}`);
+        const data = await responseText.json();
 
-//         const transformedResults = data.results.map(result => {
-//             if(result.media_type === "movie" || result.title) {
-//                 return {
-//                     title: result.title || result.name || result.original_title || result.original_name,
-//                     image: `https://image.tmdb.org/t/p/w500${result.poster_path}`,
-//                     href: `https://bingeflix.tv/movie/${result.id}`
-//                 };
-//             } else if(result.media_type === "tv" || result.name) {
-//                 return {
-//                     title: result.name || result.title || result.original_name || result.original_title,
-//                     image: `https://image.tmdb.org/t/p/w500${result.poster_path}`,
-//                     href: `https://bingeflix.tv/tv/${result.id}`
-//                 };
-//             } else {
-//                 return {
-//                     title: result.title || result.name || result.original_name || result.original_title || "Untitled",
-//                     image: `https://image.tmdb.org/t/p/w500${result.poster_path}`,
-//                     href: `https://bingeflix.tv/tv/${result.id}`
-//                 };
-//             }
-//         });
+        const transformedResults = data.results.map(result => {
+            if(result.media_type === "movie" || result.title) {
+                return {
+                    title: result.title || result.name || result.original_title || result.original_name,
+                    image: `https://image.tmdb.org/t/p/w500${result.poster_path}`,
+                    href: `https://bingeflix.tv/movie/${result.id}`
+                };
+            } else if(result.media_type === "tv" || result.name) {
+                return {
+                    title: result.name || result.title || result.original_name || result.original_title,
+                    image: `https://image.tmdb.org/t/p/w500${result.poster_path}`,
+                    href: `https://bingeflix.tv/tv/${result.id}`
+                };
+            } else {
+                return {
+                    title: result.title || result.name || result.original_name || result.original_title || "Untitled",
+                    image: `https://image.tmdb.org/t/p/w500${result.poster_path}`,
+                    href: `https://bingeflix.tv/tv/${result.id}`
+                };
+            }
+        });
 
-//         return JSON.stringify(transformedResults);
-//     } catch (error) {
-//         console.log('Fetch error in searchResults:', error);
-//         return JSON.stringify([{ title: 'Error', image: '', href: '' }]);
-//     }
-// }
+        console.log('Transformed search results: ' + JSON.stringify(transformedResults));
+        return JSON.stringify(transformedResults);
+    } catch (error) {
+        console.log('Fetch error in searchResults:', error);
+        return JSON.stringify([{ title: 'Error', image: '', href: '' }]);
+    }
+}
 
-// async function extractDetails(url) {
-//     try {
-//         if(url.includes('/movie/')) {
-//             const match = url.match(/https:\/\/bingeflix\.tv\/movie\/([^\/]+)/);
-//             if (!match) throw new Error("Invalid URL format");
+async function extractDetails(url) {
+    try {
+        if(url.includes('/movie/')) {
+            const match = url.match(/https:\/\/bingeflix\.tv\/movie\/([^\/]+)/);
+            if (!match) throw new Error("Invalid URL format");
 
-//             const movieId = match[1];
-//             const responseText = await soraFetch(`https://api.themoviedb.org/3/movie/${movieId}?api_key=ad301b7cc82ffe19273e55e4d4206885`);
-//             const data = await responseText.json();
+            const movieId = match[1];
+            const responseText = await soraFetch(`https://api.themoviedb.org/3/movie/${movieId}?api_key=ad301b7cc82ffe19273e55e4d4206885`);
+            const data = await responseText.json();
 
-//             const transformedResults = [{
-//                 description: data.overview || 'No description available',
-//                 aliases: `Duration: ${data.runtime ? data.runtime + " minutes" : 'Unknown'}`,
-//                 airdate: `Released: ${data.release_date ? data.release_date : 'Unknown'}`
-//             }];
+            const transformedResults = [{
+                description: data.overview || 'No description available',
+                aliases: `Duration: ${data.runtime ? data.runtime + " minutes" : 'Unknown'}`,
+                airdate: `Released: ${data.release_date ? data.release_date : 'Unknown'}`
+            }];
 
-//             return JSON.stringify(transformedResults);
-//         } else if(url.includes('/tv/')) {
-//             const match = url.match(/https:\/\/bingeflix\.tv\/tv\/([^\/]+)/);
-//             if (!match) throw new Error("Invalid URL format");
+            return JSON.stringify(transformedResults);
+        } else if(url.includes('/tv/')) {
+            const match = url.match(/https:\/\/bingeflix\.tv\/tv\/([^\/]+)/);
+            if (!match) throw new Error("Invalid URL format");
 
-//             const showId = match[1];
-//             const responseText = await soraFetch(`https://api.themoviedb.org/3/tv/${showId}?api_key=ad301b7cc82ffe19273e55e4d4206885`);
-//             const data = await responseText.json();
+            const showId = match[1];
+            const responseText = await soraFetch(`https://api.themoviedb.org/3/tv/${showId}?api_key=ad301b7cc82ffe19273e55e4d4206885`);
+            const data = await responseText.json();
 
-//             const transformedResults = [{
-//                 description: data.overview || 'No description available',
-//                 aliases: `Duration: ${data.episode_run_time && data.episode_run_time.length ? data.episode_run_time.join(', ') + " minutes" : 'Unknown'}`,
-//                 airdate: `Aired: ${data.first_air_date ? data.first_air_date : 'Unknown'}`
-//             }];
+            const transformedResults = [{
+                description: data.overview || 'No description available',
+                aliases: `Duration: ${data.episode_run_time && data.episode_run_time.length ? data.episode_run_time.join(', ') + " minutes" : 'Unknown'}`,
+                airdate: `Aired: ${data.first_air_date ? data.first_air_date : 'Unknown'}`
+            }];
 
-//             return JSON.stringify(transformedResults);
-//         } else {
-//             throw new Error("Invalid URL format");
-//         }
-//     } catch (error) {
-//         console.log('Details error:', error);
-//         return JSON.stringify([{
-//             description: 'Error loading description',
-//             aliases: 'Duration: Unknown',
-//             airdate: 'Aired/Released: Unknown'
-//         }]);
-//     }
-// }
+            return JSON.stringify(transformedResults);
+        } else {
+            throw new Error("Invalid URL format");
+        }
+    } catch (error) {
+        console.log('Details error:', error);
+        return JSON.stringify([{
+            description: 'Error loading description',
+            aliases: 'Duration: Unknown',
+            airdate: 'Aired/Released: Unknown'
+        }]);
+    }
+}
 
-// async function extractEpisodes(url) {
-//     try {
-//         if(url.includes('/movie/')) {
-//             const match = url.match(/https:\/\/bingeflix\.tv\/movie\/([^\/]+)/);
+async function extractEpisodes(url) {
+    try {
+        if(url.includes('/movie/')) {
+            const match = url.match(/https:\/\/bingeflix\.tv\/movie\/([^\/]+)/);
             
-//             if (!match) throw new Error("Invalid URL format");
+            if (!match) throw new Error("Invalid URL format");
             
-//             const movieId = match[1];
+            const movieId = match[1];
             
-//             return JSON.stringify([
-//                 { href: `https://bingeflix.tv/movie/${movieId}`, number: 1, title: "Full Movie" }
-//             ]);
-//         } else if(url.includes('/tv/')) {
-//             const match = url.match(/https:\/\/bingeflix\.tv\/tv\/([^\/]+)/);
+            return JSON.stringify([
+                { href: `https://bingeflix.tv/movie/${movieId}`, number: 1, title: "Full Movie" }
+            ]);
+        } else if(url.includes('/tv/')) {
+            const match = url.match(/https:\/\/bingeflix\.tv\/tv\/([^\/]+)/);
             
-//             if (!match) throw new Error("Invalid URL format");
+            if (!match) throw new Error("Invalid URL format");
             
-//             const showId = match[1];
+            const showId = match[1];
             
-//             const showResponseText = await soraFetch(`https://api.themoviedb.org/3/tv/${showId}?api_key=ad301b7cc82ffe19273e55e4d4206885`);
-//             const showData = await showResponseText.json();
+            const showResponseText = await soraFetch(`https://api.themoviedb.org/3/tv/${showId}?api_key=ad301b7cc82ffe19273e55e4d4206885`);
+            const showData = await showResponseText.json();
             
-//             let allEpisodes = [];
-//             for (const season of showData.seasons) {
-//                 const seasonNumber = season.season_number;
+            let allEpisodes = [];
+            for (const season of showData.seasons) {
+                const seasonNumber = season.season_number;
 
-//                 if(seasonNumber === 0) continue;
+                if(seasonNumber === 0) continue;
                 
-//                 const seasonResponseText = await soraFetch(`https://api.themoviedb.org/3/tv/${showId}/season/${seasonNumber}?api_key=ad301b7cc82ffe19273e55e4d4206885`);
-//                 const seasonData = await seasonResponseText.json();
+                const seasonResponseText = await soraFetch(`https://api.themoviedb.org/3/tv/${showId}/season/${seasonNumber}?api_key=ad301b7cc82ffe19273e55e4d4206885`);
+                const seasonData = await seasonResponseText.json();
                 
-//                 if (seasonData.episodes && seasonData.episodes.length) {
-//                     const episodes = seasonData.episodes.map(episode => ({
-//                         href: `https://bingeflix.tv/tv/${showId}?season=${seasonNumber}&episode=${episode.episode_number}`,
-//                         number: episode.episode_number,
-//                         title: episode.name || ""
-//                     }));
-//                     allEpisodes = allEpisodes.concat(episodes);
-//                 }
-//             }
+                if (seasonData.episodes && seasonData.episodes.length) {
+                    const episodes = seasonData.episodes.map(episode => ({
+                        href: `https://bingeflix.tv/tv/${showId}?season=${seasonNumber}&episode=${episode.episode_number}`,
+                        number: episode.episode_number,
+                        title: episode.name || ""
+                    }));
+                    allEpisodes = allEpisodes.concat(episodes);
+                }
+            }
+
+            console.log('All episodes: ' + JSON.stringify(allEpisodes));
+            return JSON.stringify(allEpisodes);
+        } else {
+            throw new Error("Invalid URL format");
+        }
+    } catch (error) {
+        console.log('Fetch error in extractEpisodes:', error);
+        return JSON.stringify([]);
+    }    
+}
+
+// searchResults("Breaking bad");
+// extractDetails("https://bingeflix.tv/tv/1396");
+// extractEpisodes("https://bingeflix.tv/tv/1396");
+extractStreamUrl("https://bingeflix.tv/tv/1396?season=1&episode=1");
+
+// extractStreamUrl("https://bingeflix.tv/movie/157336");
+
+async function extractStreamUrl(url) {
+    try {
+        let providers = [];
+
+        if (url.includes('/movie/')) {
+            const match = url.match(/https:\/\/bingeflix\.tv\/movie\/([^\/]+)/);
+            if (!match) throw new Error("Invalid URL format");
             
-//             return JSON.stringify(allEpisodes);
-//         } else {
-//             throw new Error("Invalid URL format");
-//         }
-//     } catch (error) {
-//         console.log('Fetch error in extractEpisodes:', error);
-//         return JSON.stringify([]);
-//     }    
-// }
-
-// async function extractStreamUrl(url) {
-//     if (!_0xCheck()) return 'https://files.catbox.moe/avolvc.mp4';
-
-//     // "hyvax" is with .srt captions
-
-//     // const servicesWithoutCaption = [
-//     //     "guru",
-//     //     // "halo",
-//     //     // "g1",
-//     //     // "g2",
-//     //     // "alpha",
-//     //     // "fastx",
-//     //     // "astra",
-//     //     // "ninja",
-//     //     // "catflix",
-//     //     // "hyvax",
-//     //     // "vidcloud",
-//     //     // "filmxyz",
-//     //     // "shadow",
-//     //     // "kaze",
-//     //     // "asiacloud",
-//     //     // "zenith",
-//     //     // "kage",
-//     //     // "anime",
-//     //     // "ghost",
-//     //     // "filmecho",
-//     //     // "kinoecho",
-//     //     // "ee3",
-//     //     // "putafilme",
-//     //     // "ophim",
-//     // ];
-
-//     // const secretKey = ["I", "3LZu", "M2V3", "4EXX", "s4", "yRy", "oqMz", "ysE", "RT", "iSI", "zlc", "H", "YNp", "5vR6", "h9S", "R", "jo", "F", "h2", "W8", "i", "sz09", "Xom", "gpU", "q", "6Qvg", "Cu", "5Zaz", "VK", "od", "FGY4", "eu", "D5Q", "smH", "11eq", "QrXs", "3", "L3", "YhlP", "c", "Z", "YT", "bnsy", "5", "fcL", "L22G", "r8", "J", "4", "gnK"];
-
-//     try {
-//         if (url.includes('/movie/')) {
-//             const match = url.match(/https:\/\/bingeflix\.tv\/movie\/([^\/]+)/);
-//             if (!match) throw new Error("Invalid URL format");
-
-//             const movieId = match[1];
-
-//             // for (let i = 0; i < servicesWithoutCaption.length; i++) {
-//             //     for (let j = 0; j < secretKey.length; j++) {
-//             //         const service = servicesWithoutCaption[i];
-//             //         const apiUrl = `https://rivestream.org/api/backendfetch?requestID=movieVideoProvider&id=${movieId}&service=${service}&secretKey=${secretKey[j]}&proxyMode=noProxy`;
-//             //         // const apiUrl2 = `https://scrapper.rivestream.org/api/embed?provider=vidsrcrip&id=${movieId}&api_key=d64117f26031a428449f102ced3aba73`;
-
-//             //         try {
-//             //             const subtitleTrackResponse = await soraFetch(`https://sub.wyzie.ru/search?id=${movieId}`);
-//             //             const subtitleTrackData = await subtitleTrackResponse.json();
-
-//             //             const subtitleTrack = subtitleTrackData.find(track =>
-//             //                 track.display.startsWith('English')
-//             //             );
-                        
-//             //             const response = await soraFetch(apiUrl);
-//             //             const data = await response.json();
-
-//             //             if (data && data.error !== "Internal Server Error") {
-//             //                 const preferredQualities = ['HLS 1', 'HLS 7', 'HLS 10', 'HLS 13', 'HLS 15', 'HLS 4'];
-//             //                 let hlsSource;
-
-//             //                 for (const quality of preferredQualities) {
-//             //                     hlsSource = data.data?.sources?.find(source => source.format === 'hls' && source.quality === quality);
-//             //                     if (hlsSource) break;
-//             //                 }
-
-//             //                 if (!hlsSource) {
-//             //                     hlsSource = data.data?.sources?.find(source => source.format === 'hls');
-//             //                 }
-
-//             //                 console.log("URL:" + JSON.stringify(hlsSource?.url));
-
-//             //                 const result = {
-//             //                     stream: hlsSource.url || "",
-//             //                     subtitles: subtitleTrack ? subtitleTrack.url : ""
-//             //                 };
-
-//             //                 console.log(JSON.stringify(result));
-//             //                 return JSON.stringify(result);
-
-//             //                 // if (hlsSource?.url && !hlsSource.url.includes("uwu")) {
-//             //                 //     const playlistResponse = await soraFetch(hlsSource.url);
-//             //                 //     const playlistText = await playlistResponse.text();
-
-//             //                 //     console.log(playlistText);
-
-//             //                 //     const streamMatches = playlistText.match(/#EXT-X-STREAM-INF:.*?RESOLUTION=(\d+x\d+).*?\n(.*?)(?:\n|$)/g);
-
-//             //                 //     if (streamMatches) {
-//             //                 //         const streams = streamMatches
-//             //                 //             .map(matchStr => {
-//             //                 //                 const resolutionMatch = matchStr.match(/RESOLUTION=(\d+)x(\d+)/);
-//             //                 //                 const lines = matchStr.split('\n').filter(Boolean);
-//             //                 //                 const relativeUrl = lines[1];
-//             //                 //                 if (resolutionMatch && relativeUrl) {
-//             //                 //                     return {
-//             //                 //                         width: parseInt(resolutionMatch[1], 10),
-//             //                 //                         height: parseInt(resolutionMatch[2], 10),
-//             //                 //                         url: relativeUrl
-//             //                 //                     };
-//             //                 //                 }
-//             //                 //                 return null;
-//             //                 //             })
-//             //                 //             .filter(Boolean)
-//             //                 //             .sort((a, b) => b.width - a.width);
-
-//             //                 //         const highestResStream = streams[0];
-
-//             //                 //         console.log(highestResStream);
-
-//             //                 //         if (highestResStream) {
-//             //                 //             const parts = hlsSource.url.split('/');
-//             //                 //             const baseUrl = parts[0] + '//' + parts[2] + '/';
-
-//             //                 //             const finalStreamUrl = baseUrl + highestResStream.url;
-
-//             //                 //             const result = {
-//             //                 //                 stream: finalStreamUrl || "",
-//             //                 //                 subtitles: subtitleTrack ? subtitleTrack.url : ""
-//             //                 //             };
-
-//             //                 //             console.log(result);
-//             //                 //             return JSON.stringify(result);
-//             //                 //         }
-//             //                 //     }
-//             //                 // } else {
-//             //                 //     const result = {
-//             //                 //         stream: hlsSource.url || "",
-//             //                 //         subtitles: subtitleTrack ? subtitleTrack.url : ""
-//             //                 //     };
-
-//             //                 //     console.log(JSON.stringify(result));
-//             //                 //     return JSON.stringify(result);
-//             //                 // }
-//             //             }
-//             //         } catch (err) {
-//             //             console.log(`Fetch error on endpoint ${apiUrl} for movie ${movieId}:`, err);
-//             //         }
-//             //     }
-//             // }
-
-//             try {
-//                 let streams = [];
-
-//                 const embedUrl = `https://vidsrc.su/embed/movie/${movieId}`
-//                 const data1 = await soraFetch(embedUrl).then(res => res.text());
-
-//                 const urlRegex = /^(?!\s*\/\/).*url:\s*(['"])(.*?)\1/gm;
-//                 const subtitleRegex = /"url"\s*:\s*"([^"]+)"[^}]*"format"\s*:\s*"([^"]+)"[^}]*"display"\s*:\s*"([^"]+)"[^}]*"language"\s*:\s*"([^"]+)"/g;
-                
-//                 const streams2 = Array.from(data1.matchAll(urlRegex), m => m[2].trim()).filter(Boolean);
-
-//                 for (let i = 0; i < streams2.length; i++) {
-//                     const currentStream = streams2[i];
-
-//                     if (currentStream) {
-//                         streams.push(currentStream);
-//                     }
-//                 }
-
-//                 let subtitle = '';
-//                 // const engMatch = Array.from(data1.matchAll(subtitleRegex)).find(([, url,, display]) => display.includes('English'));
-                
-//                 // if (engMatch) {
-//                 //     subtitle = engMatch[1];
-//                 // } else {
-//                 //     const subtitleTrackResponse = await soraFetch(`https://sub.wyzie.ru/search?id=${movieId}`);
-//                 //     const subtitleTrackData = await subtitleTrackResponse.json();
-
-//                 //     const subtitleTrack = subtitleTrackData.find(track =>
-//                 //         track.display.startsWith('English')
-//                 //     );
-
-//                 //     subtitle = subtitleTrack ? subtitleTrack.url : '';
-//                 // }
-
-//                 const subtitleTrackResponse = await soraFetch(`https://sub.wyzie.ru/search?id=${movieId}`);
-//                 const subtitleTrackData = await subtitleTrackResponse.json();
-
-//                 console.log("URL:" + JSON.stringify(subtitleTrackData));
-
-//                 let subtitleTrack = subtitleTrackData.find(track =>
-//                     track.display.includes('English') && (track.encoding === 'ASCII' || track.encoding === 'UTF-8')
-//                 );
-    
-//                 if (!subtitleTrack) {
-//                     subtitleTrack = subtitleTrackData.find(track => track.display.includes('English') && (track.encoding === 'CP1252'));
-//                 }
-
-//                 if (!subtitleTrack) {
-//                     subtitleTrack = subtitleTrackData.find(track => track.display.includes('English') && (track.encoding === 'CP1250'));
-//                 }
-        
-//                 if (!subtitleTrack) {
-//                     subtitleTrack = subtitleTrackData.find(track => track.display.includes('English') && (track.encoding === 'CP850'));
-//                 }
-
-//                 subtitle = subtitleTrack ? subtitleTrack.url : '';
-
-//                 console.log("URL:" + JSON.stringify(subtitle));
-
-//                 const C = movieId
-//                     .toString()
-//                     .split("")
-//                     .map((digit) => {
-//                         const encoding = "abcdefghij";
-//                         return encoding[parseInt(digit)];
-//                     })
-//                     .join("");
-//                 const B = C.split("").reverse().join("");
-//                 const A = btoa(B);
-//                 const D = btoa(A);
-//                 const urlovo = `https://api2.vidsrc.vip/movie/${D}`;
-//                 const response = await soraFetch(urlovo);
-//                 const data = await response.json();
-
-//                 console.log(JSON.stringify(data));
-
-//                 const sourceKeys = ["source4", "source1", "source2", "source5", "source3"];
-
-//                 for (let key of sourceKeys) {
-//                     const currentSource = data[key];
-
-//                     if (currentSource && currentSource.url && currentSource.language === "English") {
-//                         if (currentSource.url !== "https://vid3c.site/stream/file2/video.mp4") {
-//                             streams.push(currentSource.url);
-//                         }
-//                     }
-//                 }
-
-//                 const result = {
-//                     streams,
-//                     subtitles: subtitle
-//                 };
-
-//                 console.log(result);
-//                 return JSON.stringify(result);
-//             } catch (err) {
-//                 console.log('Fetch error in extractStreamUrl:', err);
-//             }
-//         } else if (url.includes('/tv/')) {
-//             const match = url.match(/https:\/\/bingeflix\.tv\/tv\/([^\/]+)\?season=([^\/]+)&episode=([^\/]+)/);
-//             if (!match) throw new Error("Invalid URL format");
-
-//             const showId = match[1];
-//             const seasonNumber = match[2];
-//             const episodeNumber = match[3];
-
-//             // for (let i = 0; i < servicesWithoutCaption.length; i++) {
-//             //     for (let j = 0; j < secretKey.length; j++) {
-//             //         const service = servicesWithoutCaption[i];
-//             //         const apiUrl = `https://rivestream.org/api/backendfetch?requestID=tvVideoProvider&id=${showId}&season=${seasonNumber}&episode=${episodeNumber}&service=${service}&secretKey=${secretKey[j]}&proxyMode=noProxy`;
-//             //         // const apiUrl2 = `https://scrapper.rivestream.org/api/embed?provider=vidsrcrip&id=${showId}&season=${seasonNumber}&episode=${episodeNumber}&api_key=d64117f26031a428449f102ced3aba73`
-
-//             //         try {
-//             //             const subtitleTrackResponse = await soraFetch(`https://sub.wyzie.ru/search?id=${showId}&season=${seasonNumber}&episode=${episodeNumber}`);
-//             //             const subtitleTrackData = await subtitleTrackResponse.json();
-
-//             //             const subtitleTrack = subtitleTrackData.find(track =>
-//             //                 track.display.startsWith('English')
-//             //             );
-                        
-//             //             const response = await soraFetch(apiUrl);
-//             //             const data = await response.json();
-
-//             //             if (data && data.error !== "Internal Server Error") {
-//             //                 const preferredQualities = ['HLS 1', 'HLS 7', 'HLS 10', 'HLS 13', 'HLS 15', 'HLS 4'];
-//             //                 let hlsSource;
-
-//             //                 for (const quality of preferredQualities) {
-//             //                     hlsSource = data.data?.sources?.find(source => source.format === 'hls' && source.quality === quality);
-//             //                     if (hlsSource) break;
-//             //                 }
-
-//             //                 if (!hlsSource) {
-//             //                     hlsSource = data.data?.sources?.find(source => source.format === 'hls');
-//             //                 }
-
-//             //                 const result = {
-//             //                     stream: hlsSource.url || "",
-//             //                     subtitles: subtitleTrack ? subtitleTrack.url : ""
-//             //                 };
-
-//             //                 console.log(result);
-//             //                 return JSON.stringify(result);
-
-//             //                 // if (hlsSource?.url && !hlsSource.url.includes("uwu")) {
-//             //                 //     const playlistResponse = await soraFetch(hlsSource.url);
-//             //                 //     const playlistText = await playlistResponse.text();
-
-//             //                 //     console.log(playlistText);
-
-//             //                 //     const streamMatches = playlistText.match(/#EXT-X-STREAM-INF:.*?RESOLUTION=(\d+x\d+).*?\n(.*?)(?:\n|$)/g);
-
-//             //                 //     if (streamMatches) {
-//             //                 //         const streams = streamMatches
-//             //                 //             .map(matchStr => {
-//             //                 //                 const resolutionMatch = matchStr.match(/RESOLUTION=(\d+)x(\d+)/);
-//             //                 //                 const lines = matchStr.split('\n').filter(Boolean);
-//             //                 //                 const relativeUrl = lines[1];
-//             //                 //                 if (resolutionMatch && relativeUrl) {
-//             //                 //                     return {
-//             //                 //                         width: parseInt(resolutionMatch[1], 10),
-//             //                 //                         height: parseInt(resolutionMatch[2], 10),
-//             //                 //                         url: relativeUrl
-//             //                 //                     };
-//             //                 //                 }
-//             //                 //                 return null;
-//             //                 //             })
-//             //                 //             .filter(Boolean)
-//             //                 //             .sort((a, b) => b.width - a.width);
-
-//             //                 //         const highestResStream = streams[0];
-
-//             //                 //         console.log(highestResStream);
-
-//             //                 //         if (highestResStream) {
-//             //                 //             const parts = hlsSource.url.split('/');
-//             //                 //             const baseUrl = parts[0] + '//' + parts[2] + '/';
-
-//             //                 //             const finalStreamUrl = baseUrl + highestResStream.url;
-
-//             //                 //             const result = {
-//             //                 //                 stream: finalStreamUrl || "",
-//             //                 //                 subtitles: subtitleTrack ? subtitleTrack.url : ""
-//             //                 //             };
-
-//             //                 //             console.log(result);
-//             //                 //             return JSON.stringify(result);
-//             //                 //         }
-//             //                 //     }
-//             //                 // } else {
-//             //                 //     const result = {
-//             //                 //         stream: hlsSource.url || "",
-//             //                 //         subtitles: subtitleTrack ? subtitleTrack.url : ""
-//             //                 //     };
-
-//             //                 //     console.log(result);
-//             //                 //     return JSON.stringify(result);
-//             //                 // }
-//             //             }
-//             //         } catch (err) {
-//             //             console.log(`Fetch error on endpoint ${apiUrl} for show ${showId}:`, err);
-//             //         }
-//             //     }
-//             // }
-
-//             try {
-//                 let streams = [];
-                
-//                 const embedUrl = `https://vidsrc.su/embed/tv/${showId}/${seasonNumber}/${episodeNumber}`
-//                 const data1 = await soraFetch(embedUrl).then(res => res.text());
-                
-//                 const urlRegex = /^(?!\s*\/\/).*url:\s*(['"])(.*?)\1/gm;
-//                 const subtitleRegex = /"url"\s*:\s*"([^"]+)"[^}]*"format"\s*:\s*"([^"]+)"[^}]*"display"\s*:\s*"([^"]+)"[^}]*"language"\s*:\s*"([^"]+)"/g;
-                
-//                 const streams2 = Array.from(data1.matchAll(urlRegex), m => m[2].trim()).filter(Boolean);
-                
-//                 for (let i = 0; i < streams2.length; i++) {
-//                     const currentStream = streams2[i];
-
-//                     if (currentStream) {
-//                         streams.push(currentStream);
-//                     }
-//                 }
-                
-//                 let subtitle = '';
-//                 // const engMatch = Array.from(data1.matchAll(subtitleRegex)).find(([, url,, display]) => display.includes('English'));
-
-//                 // if (engMatch) {
-//                 //     subtitle = engMatch[1];
-//                 // } else {
-//                 //     const subtitleTrackResponse = await soraFetch(`https://sub.wyzie.ru/search?id=${showId}&season=${seasonNumber}&episode=${episodeNumber}`);
-//                 //     const subtitleTrackData = await subtitleTrackResponse.json();
-
-//                 //     const subtitleTrack = subtitleTrackData.find(track =>
-//                 //         track.display.startsWith('English')
-//                 //     );
-
-//                 //     subtitle = subtitleTrack ? subtitleTrack.url : '';
-//                 // }
-
-//                 const subtitleTrackResponse = await soraFetch(`https://sub.wyzie.ru/search?id=${showId}&season=${seasonNumber}&episode=${episodeNumber}`);
-//                 const subtitleTrackData = await subtitleTrackResponse.json();
-
-//                 let subtitleTrack = subtitleTrackData.find(track =>
-//                     track.display.includes('English') && (track.encoding === 'ASCII' || track.encoding === 'UTF-8')
-//                 );
-    
-//                 if (!subtitleTrack) {
-//                     subtitleTrack = subtitleTrackData.find(track => track.display.includes('English') && (track.encoding === 'CP1252'));
-//                 }
-
-//                 if (!subtitleTrack) {
-//                     subtitleTrack = subtitleTrackData.find(track => track.display.includes('English') && (track.encoding === 'CP1250'));
-//                 }
-        
-//                 if (!subtitleTrack) {
-//                     subtitleTrack = subtitleTrackData.find(track => track.display.includes('English') && (track.encoding === 'CP850'));
-//                 }
-
-//                 subtitle = subtitleTrack ? subtitleTrack.url : '';
-
-//                 const formattedString = `${showId}-${seasonNumber}-${episodeNumber}`;
-//                 const reversedString = formattedString.split('').reverse().join('');
-//                 const firstBase64 = btoa(reversedString);
-//                 const secondBase64 = btoa(firstBase64);
-//                 const url2 = `https://api2.vidsrc.vip/tv/${secondBase64}`;
-//                 const response = await soraFetch(url2);
-//                 const data = await response.json();
-
-//                 console.log("URL:" + JSON.stringify(url2));
-//                 console.log(JSON.stringify(data));
-
-//                 const sourceKeys = ["source4", "source1", "source2", "source5", "source3"];
-
-//                 for (let key of sourceKeys) {
-//                     const currentSource = data[key];
-
-//                     if (currentSource && currentSource.url && currentSource.language === "English") {
-//                         if (currentSource.url !== "https://vid3c.site/stream/file2/video.mp4") {
-//                             streams.push(currentSource.url);
-//                         }
-//                     }
-//                 }
-
-//                 const result = {
-//                     streams,
-//                     subtitles: subtitle
-//                 };
-
-//                 console.log(result);
-//                 return JSON.stringify(result);
-//             } catch (err) {
-//                 console.log('Fetch error in extractStreamUrl:', err);
-//             }
-//         } else {
-//             throw new Error("Invalid URL format");
-//         }
-//     } catch (error) {
-//         console.log('Fetch error in extractStreamUrl:', error);
-//         return null;
-//     }
-// }
-
-// function btoa(input) {
-//     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
-//     let str = String(input);
-//     let output = '';
-
-//     for (let block = 0, charCode, i = 0, map = chars;
-//         str.charAt(i | 0) || (map = '=', i % 1);
-//         output += map.charAt(63 & (block >> (8 - (i % 1) * 8)))) {
-//         charCode = str.charCodeAt(i += 3 / 4);
-//         if (charCode > 0xFF) {
-//             throw new Error("btoa failed: The string contains characters outside of the Latin1 range.");
-//         }
-//         block = (block << 8) | charCode;
-//     }
-
-//     return output;
-// }
-
-// async function soraFetch(url, options = { headers: {}, method: 'GET', body: null }) {
-//     try {
-//         return await fetchv2(url, options.headers ?? {}, options.method ?? 'GET', options.body ?? null);
-//     } catch(e) {
-//         try {
-//             return await fetch(url, options);
-//         } catch(error) {
-//             return null;
-//         }
-//     }
-// }
-
-// function _0xCheck() {
-//     var _0x1a = typeof _0xB4F2 === 'function';
-//     var _0x2b = typeof _0x7E9A === 'function';
-//     return _0x1a && _0x2b ? (function(_0x3c) {
-//         return _0x7E9A(_0x3c);
-//     })(_0xB4F2()) : !1;
-// }
-
-// function _0x7E9A(_){return((___,____,_____,______,_______,________,_________,__________,___________,____________)=>(____=typeof ___,_____=___&&___[String.fromCharCode(...[108,101,110,103,116,104])],______=[...String.fromCharCode(...[99,114,97,110,99,105])],_______=___?[...___[String.fromCharCode(...[116,111,76,111,119,101,114,67,97,115,101])]()]:[],(________=______[String.fromCharCode(...[115,108,105,99,101])]())&&_______[String.fromCharCode(...[102,111,114,69,97,99,104])]((_________,__________)=>(___________=________[String.fromCharCode(...[105,110,100,101,120,79,102])](_________))>=0&&________[String.fromCharCode(...[115,112,108,105,99,101])](___________,1)),____===String.fromCharCode(...[115,116,114,105,110,103])&&_____===16&&________[String.fromCharCode(...[108,101,110,103,116,104])]===0))(_)}
+            const movieId = match[1];
+            const response = await soraFetch(`https://play2.123embed.net/server/6?path=/movie/${movieId}`);
+            const data = await response.json();
+
+            const iframeUrl = data.iframe;
+            const iframeResponse = await soraFetch(iframeUrl);
+            const iframeHtml = await iframeResponse.text();
+
+            const regex = /loadMovieServer\('(\d+)',\s*'([^']+)'\)/g;
+            let m;
+            const seen = new Set();
+
+            while ((m = regex.exec(iframeHtml)) !== null) {
+                const key = `${m[1]}-${m[2]}`;
+                if (seen.has(key)) continue;
+                seen.add(key);
+                providers.push({ showId: m[1], provider: m[2] });
+            }
+
+            console.log('Providers found: ' + JSON.stringify(providers));
+
+            const tasks = providers.map(async ({ showId, provider }) => {
+                try {
+                    if (["hydrax", "ytstream", "gd-hls", "gd-proxy"].includes(provider)) {
+                        return null;
+                    }
+
+                    const providerUrl = `https://play.123embed.net/ajax/movie/get_sources/${showId}/${provider}`;
+                    const providerResponse = await soraFetch(providerUrl);
+                    const providerData = await providerResponse.json();
+
+                    let sources = providerData.sources;
+                    let tracks = providerData.tracks;
+
+                    if (typeof sources === "string") sources = JSON.parse(sources || "[]");
+                    if (typeof tracks === "string") tracks = JSON.parse(tracks || "[]");
+
+                    if (!Array.isArray(sources) || sources.length === 0) return null;
+
+                    const streams = sources.map(s => ({
+                        title: `${provider.toUpperCase()} - ${s.label || "Source"}`,
+                        streamUrl: s.file,
+                        headers: {}
+                    }));
+
+                    let subtitle = "";
+                    if (Array.isArray(tracks) && tracks.length > 0) {
+                        const eng = tracks.find(t => /english/i.test(t.label));
+                        subtitle = eng ? eng.file : tracks[0].file;
+                    }
+
+                    return { streams, subtitle };
+                } catch (err) {
+                    console.error(`❌ Failed provider ${provider}:`, err);
+                    return null;
+                }
+            });
+
+            const results = (await Promise.all(tasks)).filter(Boolean);
+
+            const allStreams = results.flatMap(r => r.streams);
+            const subtitle = results.find(r => r.subtitle)?.subtitle || "";
+
+            const transformedResults = { streams: allStreams, subtitles: subtitle };
+
+            console.log('Transformed stream results: ' + JSON.stringify(transformedResults));
+            return JSON.stringify(transformedResults);
+        } else if (url.includes('/tv/')) {
+            const match = url.match(/https:\/\/bingeflix\.tv\/tv\/([^\/]+)\?season=(\d+)&episode=(\d+)/);
+            if (!match) throw new Error("Invalid URL format");
+
+            const showId = match[1];
+            const seasonNumber = match[2];
+            const episodeNumber = match[3];
+            const response = await soraFetch(`https://play2.123embed.net/server/6?path=/tv/${showId}/${seasonNumber}/${episodeNumber}`);
+            const data = await response.json();
+
+            const iframeUrl = data.iframe;
+            const iframeResponse = await soraFetch(iframeUrl);
+            const iframeHtml = await iframeResponse.text();
+
+            const regex = /loadSerieEpisode\('(\d+)',\s*(\d+),\s*'([^']+)'\)/g;
+            let m;
+            const seen = new Set();
+            const providers = [];
+
+            while ((m = regex.exec(iframeHtml)) !== null) {
+                const key = `${m[1]}-${m[2]}-${m[3]}`;
+                if (seen.has(key)) continue;
+                seen.add(key);
+
+                providers.push({
+                    showId: m[1],
+                    episodeNumber: m[2],
+                    provider: m[3]
+                });
+            }
+
+            console.log(providers);
+
+            const tasks = providers.map(async ({ showId, episodeNumber, provider }) => {
+                try {
+                    if (["hydrax", "ytstream", "gd-hls", "gd-proxy"].includes(provider)) {
+                        return null;
+                    }
+
+                    let streams = [];
+                    let subtitle = "";
+
+                    if (provider === "2embed") {
+                        // const embedUrl = `https://www.2embed.cc/embedtv/${showId}&s=${episodeNumber}&e=${episodeNumber}`;
+                        // streams.push({
+                        //     title: `${provider.toUpperCase()} - EMBED`,
+                        //     streamUrl: embedUrl,
+                        //     headers: {}
+                        // });
+
+                        const providerUrl = `https://play.123embed.net/ajax/serie/get_sources/${showId}/${episodeNumber}/${provider}`;
+                        const providerResponse = await soraFetch(providerUrl);
+                        const providerData = await providerResponse.json();
+
+                        console.log("Provider Data: " + JSON.stringify(providerData));
+
+                        let source = providerData.sources;
+                        let tracks = providerData.tracks;
+
+                        const sourceResponse = await soraFetch(source);
+                        const sourceHtml = await sourceResponse.text();
+
+                        const match = sourceHtml.match(/data-src="([^"]+)"/);
+
+                        const iframeSrc = match ? match[1] : null;
+
+                        console.log(iframeSrc);
+
+                        const headers = {
+                            'Referer': 'https://vidapi.xyz/',
+                        };
+
+                        let streams = [];
+                        let subtitles = '';
+
+                        if (iframeSrc.includes("uqloads.xyz")) {
+                            const iframeResponse = await soraFetch(iframeSrc, { headers });
+                            const iframeHtml = await iframeResponse.text();
+
+                            const packedScriptMatch = iframeHtml.match(/(eval\(function\(p,a,c,k,e,d[\s\S]*?)<\/script>/);
+                            if (!packedScriptMatch) {
+                                throw new Error("No packed script found in the iframe.");
+                            }
+                            const packedScript = packedScriptMatch[1];
+                            console.log("Packed script found.");
+                            const unpackedScript = unpack(packedScript);
+                            console.log("Unpacked script:", unpackedScript);
+
+                            const streamRegex = /"hls[1-9]":\s*"([^"]+)"/g;
+                            let streamMatch;
+                            while ((streamMatch = streamRegex.exec(unpackedScript)) !== null) {
+                                const streamUrl = streamMatch[1].trim();
+
+                                if (
+                                    streamUrl.startsWith("https://") &&
+                                    (streamUrl.includes(".m3u8") || streamUrl.includes(".mp4"))
+                                ) {
+                                    streams.push({
+                                        title: `Stream ${streams.length + 1}`,
+                                        url: streamUrl,
+                                        headers: {}
+                                    });
+                                } else {
+                                    console.log("Skipping invalid or relative Vidapi stream:", streamUrl);
+                                }
+
+                                // streams.push(streamMatch[1].trim());
+                            }
+
+                            const subtitlesRegex = /tracks\s*:\s*\[[\s\S]*?{\s*file\s*:\s*"([^"]+)"\s*,\s*label\s*:\s*"[^"]+"\s*,\s*kind\s*:\s*"captions"/;
+                            const subtitlesMatch = unpackedScript.match(subtitlesRegex);
+                            subtitles = subtitlesMatch ? subtitlesMatch[1].trim() : '';
+                            console.log("Subtitles URL:", subtitles);
+                        } else if (iframeSrc.includes("player4u.xyz")) {
+                            const iframeResponse = await soraFetch(iframeSrc, { headers });
+                            const html = await iframeResponse.text();
+
+                            const liRegex = /<li class="slide-toggle">([\s\S]*?)<\/li>/g;
+                            const entries = [];
+                            let liMatch;
+                            while ((liMatch = liRegex.exec(html)) !== null) {
+                                const liContent = liMatch[1];
+                                const urlMatch = liContent.match(/onclick="go\('([^']+)'\)"/);
+                                if (!urlMatch) continue;
+                                const entryUrl = urlMatch[1];
+                                const resMatch = liContent.match(/&nbsp;(\d+p|4K)\b/);
+                                const resolution = resMatch ? resMatch[1] : '';
+                                entries.push({ url: entryUrl, resolution });
+                            }
+
+                            for (const entry of entries) {
+                                const fullUrl = "https://player4u.xyz" + entry.url;
+                                try {
+                                    const resp = await soraFetch(fullUrl, { headers });
+                                    const iframeData = await resp.text();
+
+                                    const innerIframeMatch = iframeData.match(/<iframe[^>]+src=["']([^"']+)["']/);
+                                    if (!innerIframeMatch) continue;
+                                    let iframeSrc2 = innerIframeMatch[1].trim();
+                                    if (!iframeSrc2.startsWith("http")) {
+                                        iframeSrc2 = "https://uqloads.xyz/e/" + iframeSrc2;
+                                    }
+                                    console.log("Iframe src2:", iframeSrc2);
+
+                                    const resp2 = await soraFetch(iframeSrc2, { headers });
+                                    const iframeHtml = await resp2.text();
+                                    console.log("Iframe HTML:", iframeHtml);
+
+                                    const packedScriptMatch = iframeHtml.match(/(eval\(function\(p,a,c,k,e,d[\s\S]*?)<\/script>/);
+                                    if (!packedScriptMatch) continue;
+                                    const packedScript = packedScriptMatch[1];
+                                    console.log("Packed script found.");
+                                    const unpackedScript = unpack(packedScript);
+                                    console.log("Unpacked script:", unpackedScript);
+
+                                    const streamRegex = /"hls[1-9]":\s*"([^"]+)"/g;
+                                    let streamMatch;
+                                    while ((streamMatch = streamRegex.exec(unpackedScript)) !== null) {
+                                        const streamUrl = streamMatch[1].trim();
+
+                                        if (
+                                            streamUrl.startsWith("https://") &&
+                                            (streamUrl.includes(".m3u8") || streamUrl.includes(".mp4"))
+                                        ) {
+                                            streams.push({
+                                                title: `Stream ${streams.length + 1}`,
+                                                url: streamUrl,
+                                                headers: {}
+                                            });
+                                        } else {
+                                            console.log("Skipping invalid or relative Vidapi stream:", streamUrl);
+                                        }
+
+                                        // streams.push(streamMatch[1].trim());
+                                    }
+
+                                    if (!subtitles) {
+                                        const subtitlesRegex = /tracks\s*:\s*\[[\s\S]*?{\s*file\s*:\s*"([^"]+)"\s*,\s*label\s*:\s*"[^"]+"\s*,\s*kind\s*:\s*"captions"/;
+                                        const subtitlesMatch = unpackedScript.match(subtitlesRegex);
+                                        subtitles = subtitlesMatch ? subtitlesMatch[1].trim() : '';
+                                        console.log("Subtitles URL:", subtitles);
+                                    }
+                                } catch (err) {
+                                    console.log("Error processing entry:", entry, err);
+                                    continue;
+                                }
+                            }
+                        }
+
+                        return { streams, subtitle };
+                    } else {
+                        const providerUrl = `https://play.123embed.net/ajax/serie/get_sources/${showId}/${episodeNumber}/${provider}`;
+                        const providerResponse = await soraFetch(providerUrl);
+                        const providerData = await providerResponse.json();
+
+                        let sources = providerData.sources;
+                        let tracks = providerData.tracks;
+
+                        if (typeof sources === "string") sources = JSON.parse(sources || "[]");
+                        if (typeof tracks === "string") tracks = JSON.parse(tracks || "[]");
+
+                        if (!Array.isArray(sources) || sources.length === 0) return null;
+
+                        streams = sources.map(s => ({
+                            title: `${provider.toUpperCase()} - ${s.label || "Source"}`,
+                            streamUrl: s.file,
+                            headers: {}
+                        }));
+
+                        if (Array.isArray(tracks) && tracks.length > 0) {
+                            const eng = tracks.find(t => /english/i.test(t.label));
+                            subtitle = eng ? eng.file : tracks[0].file;
+                        }
+                    }
+
+                    return { streams, subtitle };
+
+                } catch (err) {
+                    console.error(`❌ Failed provider ${provider}:`, err);
+                    return null;
+                }
+            });
+
+
+            const results = (await Promise.all(tasks)).filter(Boolean);
+
+            const allStreams = results.flatMap(r => r.streams);
+            const subtitle = results.find(r => r.subtitle)?.subtitle || "";
+
+            const transformedResults = { streams: allStreams, subtitles: subtitle };
+
+            console.log('Transformed stream results: ' + JSON.stringify(transformedResults));
+            return JSON.stringify(transformedResults);
+        } else {
+            throw new Error("Invalid URL format");
+        }
+    } catch (error) {
+        console.log("Fetch error in extractStreamUrl:", error);
+        return { streams: [], subtitles: "" };
+    }
+}
+
+async function soraFetch(url, options = { headers: {}, method: 'GET', body: null }) {
+    try {
+        return await fetchv2(url, options.headers ?? {}, options.method ?? 'GET', options.body ?? null);
+    } catch(e) {
+        try {
+            return await fetch(url, options);
+        } catch(error) {
+            return null;
+        }
+    }
+}
+
+class Unbaser {
+    constructor(base) {
+        /* Functor for a given base. Will efficiently convert
+          strings to natural numbers. */
+        this.ALPHABET = {
+            62: "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ",
+            95: "' !\"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~'",
+        };
+        this.dictionary = {};
+        this.base = base;
+        // fill elements 37...61, if necessary
+        if (36 < base && base < 62) {
+            this.ALPHABET[base] = this.ALPHABET[base] ||
+                this.ALPHABET[62].substr(0, base);
+        }
+        // If base can be handled by int() builtin, let it do it for us
+        if (2 <= base && base <= 36) {
+            this.unbase = (value) => parseInt(value, base);
+        }
+        else {
+            // Build conversion dictionary cache
+            try {
+                [...this.ALPHABET[base]].forEach((cipher, index) => {
+                    this.dictionary[cipher] = index;
+                });
+            }
+            catch (er) {
+                throw Error("Unsupported base encoding.");
+            }
+            this.unbase = this._dictunbaser;
+        }
+    }
+    _dictunbaser(value) {
+        /* Decodes a value to an integer. */
+        let ret = 0;
+        [...value].reverse().forEach((cipher, index) => {
+            ret = ret + ((Math.pow(this.base, index)) * this.dictionary[cipher]);
+        });
+        return ret;
+    }
+}
+
+function detect(source) {
+    /* Detects whether `source` is P.A.C.K.E.R. coded. */
+    return source.replace(" ", "").startsWith("eval(function(p,a,c,k,e,");
+}
+
+function unpack(source) {
+    /* Unpacks P.A.C.K.E.R. packed js code. */
+    let { payload, symtab, radix, count } = _filterargs(source);
+    if (count != symtab.length) {
+        throw Error("Malformed p.a.c.k.e.r. symtab.");
+    }
+    let unbase;
+    try {
+        unbase = new Unbaser(radix);
+    }
+    catch (e) {
+        throw Error("Unknown p.a.c.k.e.r. encoding.");
+    }
+    function lookup(match) {
+        /* Look up symbols in the synthetic symtab. */
+        const word = match;
+        let word2;
+        if (radix == 1) {
+            //throw Error("symtab unknown");
+            word2 = symtab[parseInt(word)];
+        }
+        else {
+            word2 = symtab[unbase.unbase(word)];
+        }
+        return word2 || word;
+    }
+    source = payload.replace(/\b\w+\b/g, lookup);
+    return _replacestrings(source);
+    function _filterargs(source) {
+        /* Juice from a source file the four args needed by decoder. */
+        const juicers = [
+            /}\('(.*)', *(\d+|\[\]), *(\d+), *'(.*)'\.split\('\|'\), *(\d+), *(.*)\)\)/,
+            /}\('(.*)', *(\d+|\[\]), *(\d+), *'(.*)'\.split\('\|'\)/,
+        ];
+        for (const juicer of juicers) {
+            //const args = re.search(juicer, source, re.DOTALL);
+            const args = juicer.exec(source);
+            if (args) {
+                let a = args;
+                if (a[2] == "[]") {
+                    //don't know what it is
+                    // a = list(a);
+                    // a[1] = 62;
+                    // a = tuple(a);
+                }
+                try {
+                    return {
+                        payload: a[1],
+                        symtab: a[4].split("|"),
+                        radix: parseInt(a[2]),
+                        count: parseInt(a[3]),
+                    };
+                }
+                catch (ValueError) {
+                    throw Error("Corrupted p.a.c.k.e.r. data.");
+                }
+            }
+        }
+        throw Error("Could not make sense of p.a.c.k.e.r data (unexpected code structure)");
+    }
+    function _replacestrings(source) {
+        /* Strip string lookup table (list) and replace values in source. */
+        /* Need to work on this. */
+        return source;
+    }
+}
