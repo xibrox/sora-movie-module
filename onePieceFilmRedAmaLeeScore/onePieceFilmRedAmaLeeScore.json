@@ -1,0 +1,18 @@
+{
+    "sourceName": "One Piece Film Red: AmaLee Score",
+    "iconUrl": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/onePieceFilmRedAmaLeeScore/icon.png",
+    "author": {
+        "name": "ibro",
+        "icon": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/profile.jpg",
+        "url": "https://github.com/xibrox"
+    },
+    "version": "1.0.0",
+    "language": "English",
+    "streamType": "MP4",
+    "quality": "1080p - 720p - 480p",
+    "baseUrl": "https://pixeldrain.net/",
+    "searchBaseUrl": "https://pixeldrain.net/",
+    "scriptUrl": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/onePieceFilmRedAmaLeeScore/onePieceFilmRedAmaLeeScore.js",
+    "type": "anime",
+    "asyncJS": true
+}
