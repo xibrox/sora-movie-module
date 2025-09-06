@@ -6,16 +6,15 @@
         "icon": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/profile.jpg",
         "url": "https://github.com/xibrox"
     },
-    "version": "1.1.0",
+    "version": "1.0.1",
     "language": "English",
     "streamType": "HLS",
     "quality": "1080p",
     "baseUrl": "https://kuudere.to/",
     "searchBaseUrl": "https://kuudere.to/search?keyword=%s",
-    "scriptUrl": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/kuudere/kuudere.sora",
+    "scriptUrl": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/kuudere/kuudere.js",
     "type": "anime",
     "downloadSupport": false,
     "asyncJS": true,
-    "encrypted": true,
     "softsub": true
 }

@@ -6,15 +6,14 @@
         "icon": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/profile.jpg",
         "url": "https://github.com/xibrox"
     },
-    "version": "1.3.0",
+    "version": "1.2.7",
     "language": "English",
     "streamType": "HLS",
     "quality": "1080p",
     "baseUrl": "https://videostr.net/",
     "searchBaseUrl": "https://citysonic.tv/search/%s",
-    "scriptUrl": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/citysonic/citysonic.sora",
+    "scriptUrl": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/citysonic/citysonic.js",
     "type": "anime/shows/movies",
     "asyncJS": true,
-    "encrypted": true,
     "softsub": true
 }

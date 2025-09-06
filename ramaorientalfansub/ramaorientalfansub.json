@@ -12,7 +12,6 @@
     "quality": "1080p",
     "baseUrl": "https://ramaorientalfansub.tv/",
     "searchBaseUrl": "https://ramaorientalfansub.tv/search/?s_keyword=%s",
-    "scriptUrl": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/ramaorientalfansub/ramaorientalfansub.sora",
-    "type": "shows",
-    "encrypted": true
+    "scriptUrl": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/ramaorientalfansub/ramaorientalfansub.js",
+    "type": "shows"
 }

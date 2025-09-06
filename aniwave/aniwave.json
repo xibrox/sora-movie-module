@@ -6,16 +6,15 @@
         "icon": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/profile.jpg",
         "url": "https://github.com/xibrox"
     },
-    "version": "2.1.0",
+    "version": "2.0.12",
     "language": "English",
     "streamType": "HLS",
     "quality": "1080p",
     "baseUrl": "https://ww.aniwave.se/",
     "searchBaseUrl": "https://ww.aniwave.se/filter?keyword=%s",
-    "scriptUrl": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/aniwave/aniwave.sora",
+    "scriptUrl": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/aniwave/aniwave.js",
     "type": "anime",
     "downloadSupport": true,
     "asyncJS": true,
-    "encrypted": true,
     "softsub": true
 }

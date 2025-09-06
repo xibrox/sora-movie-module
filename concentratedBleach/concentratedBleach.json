@@ -12,9 +12,8 @@
     "quality": "1080p - 720p - 480p",
     "baseUrl": "https://pixeldrain.net/",
     "searchBaseUrl": "https://pixeldrain.net/",
-    "scriptUrl": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/concentratedBleach/concentratedBleach.sora",
+    "scriptUrl": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/concentratedBleach/concentratedBleach.js",
     "type": "anime",
     "asyncJS": true,
-    "encrypted": true,
     "downloadSupport": true
 }

@@ -6,16 +6,15 @@
         "icon": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/profile.jpg",
         "url": "https://github.com/xibrox"
     },
-    "version": "1.1.0",
+    "version": "1.0.0",
     "language": "English",
     "streamType": "HLS",
     "quality": "1080p",
     "baseUrl": "https://vidrock.net/",
     "searchBaseUrl": "https://api.themoviedb.org/3/search/multi?api_key=9801b6b0548ad57581d111ea690c85c8&query=%s&include_adult=false",
-    "scriptUrl": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/vidrock/vidrock.sora",
+    "scriptUrl": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/vidrock/vidrock.js",
     "type": "shows/movies",
     "downloadSupport": false,
     "asyncJS": true,
-    "encrypted": true,
     "softsub": true
 }

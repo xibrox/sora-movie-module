@@ -6,15 +6,14 @@
         "icon": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/profile.jpg",
         "url": "https://github.com/xibrox"
     },
-    "version": "2.1.0",
+    "version": "2.0.8",
     "language": "English",
     "streamType": "MP4",
     "quality": "1080p - 720p - 480p",
     "baseUrl": "https://pixeldrain.net/",
     "searchBaseUrl": "https://pixeldrain.net/",
-    "scriptUrl": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/narucannon/narucannon.sora",
+    "scriptUrl": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/narucannon/narucannon.js",
     "type": "anime",
     "note": "Use external player to watch the streams (e.g. VLC).",
-    "asyncJS": true,
-    "encrypted": true
+    "asyncJS": true
 }

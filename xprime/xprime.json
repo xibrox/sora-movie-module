@@ -6,15 +6,14 @@
         "icon": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/profile.jpg",
         "url": "https://github.com/xibrox"
     },
-    "version": "1.2.0",
+    "version": "1.1.5",
     "language": "English",
     "streamType": "HLS",
     "quality": "1080p",
     "baseUrl": "https://xprime.tv/",
     "searchBaseUrl": "https://api.themoviedb.org/3/search/multi?api_key=84259f99204eeb7d45c7e3d8e36c6123&query=%s",
-    "scriptUrl": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/xprime/xprime.sora",
+    "scriptUrl": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/xprime/xprime.js",
     "type": "anime/shows/movies",
     "asyncJS": true,
-    "encrypted": true,
     "softsub": true
 }

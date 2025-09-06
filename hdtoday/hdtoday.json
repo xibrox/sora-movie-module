@@ -6,16 +6,15 @@
         "icon": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/profile.jpg",
         "url": "https://github.com/xibrox"
     },
-    "version": "1.1.0",
+    "version": "1.0.5",
     "language": "English",
     "streamType": "HLS",
     "quality": "1080p",
     "baseUrl": "https://videostr.net/",
     "searchBaseUrl": "https://hdtodayz.to/search/%s",
-    "scriptUrl": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/hdtoday/hdtoday.sora",
+    "scriptUrl": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/hdtoday/hdtoday.js",
     "type": "anime/shows/movies",
     "downloadSupport": false,
     "asyncJS": true,
-    "encrypted": true,
     "softsub": true
 }

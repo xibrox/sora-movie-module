@@ -6,15 +6,14 @@
         "icon": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/profile.jpg",
         "url": "https://github.com/xibrox"
     },
-    "version": "2.1.0",
+    "version": "2.0.2",
     "language": "French",
     "streamType": "HLS & MP4",
     "quality": "720p",
     "baseUrl": "https://www.toonanime.biz/",
     "searchBaseUrl": "https://www.toonanime.biz/api/search?keyword=%s&limit=25&order=default&page=1",
-    "scriptUrl": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/toonanime/toonanime.sora",
+    "scriptUrl": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/toonanime/toonanime.js",
     "type": "anime",
     "asyncJS": true,
-    "encrypted": true,
     "softsub": true
 }

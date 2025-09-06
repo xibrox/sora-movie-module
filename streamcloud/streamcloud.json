@@ -6,14 +6,13 @@
         "icon": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/profile.jpg",
         "url": "https://github.com/xibrox"
     },
-    "version": "2.1.0",
+    "version": "2.0.4",
     "language": "German",
     "streamType": "HLS",
     "quality": "1080p",
     "baseUrl": "https://streamcloud.sx/",
     "searchBaseUrl": "https://streamcloud.sx/data/browse/?lang=2&keyword=%s",
-    "scriptUrl": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/streamcloud/streamcloud.sora",
+    "scriptUrl": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/streamcloud/streamcloud.js",
     "type": "shows/movies",
-    "asyncJS": true,
-    "encrypted": true
+    "asyncJS": true
 }

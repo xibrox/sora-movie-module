@@ -6,14 +6,13 @@
         "icon": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/profile.jpg",
         "url": "https://github.com/xibrox"
     },
-    "version": "2.1.0",
+    "version": "2.0.1",
     "language": "Arabic (DUB)",
     "streamType": "HLS",
     "quality": "720p",
     "baseUrl": "https://www.arabic-toons.com/",
     "searchBaseUrl": "https://www.arabic-toons.com/livesearch.php?q=%s",
-    "scriptUrl": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/arabictoons/arabictoons.sora",
+    "scriptUrl": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/arabictoons/arabictoons.js",
     "type": "anime/shows/movies",
-    "asyncJS": true,
-    "encrypted": true
+    "asyncJS": true
 }

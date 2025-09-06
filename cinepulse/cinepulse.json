@@ -6,15 +6,14 @@
         "icon": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/profile.jpg",
         "url": "https://github.com/xibrox"
     },
-    "version": "2.1.0",
+    "version": "2.0.2",
     "language": "French",
     "streamType": "HLS & MP4",
     "quality": "1080p",
     "baseUrl": "https://cinepulse.to/",
     "searchBaseUrl": "https://api.cinepulse.to/content/advanced-search?query=%s&sortBy=pertinence",
-    "scriptUrl": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/cinepulse/cinepulse.sora",
+    "scriptUrl": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/cinepulse/cinepulse.js",
     "type": "movies",
     "asyncJS": true,
-    "encrypted": true,
     "softsub": true
 }
