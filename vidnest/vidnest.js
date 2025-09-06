@@ -610,7 +610,7 @@ async function extractEpisodes(url) {
 
 // extractDetails("anime/2167");
 // extractEpisodes("anime/2167");
-extractStreamUrl("anime/130003/1");
+// extractStreamUrl("anime/130003/1");
 
 // searchResults("One piece");
 // extractEpisodes("anime/21");
@@ -623,6 +623,15 @@ async function extractStreamUrl(url) {
 
         let streams = [];
         let subtitles = "";
+
+        // const streams2 = await networkFetch("https://vidnest.fun/movie/666243", 30, {}, ".m3u8");
+        const streams2 = await networkFetch("https://vidnest.fun/movie/666243", {
+            timeoutSeconds: 10,
+            clickSelectors: [".PlayButton_button__7mArI"]
+        });
+
+        console.log("Vidnest.fun streams: " + JSON.stringify(streams2));
+        console.log("Vidnest.fun streams: " + streams2);
 
         if (type === 'movie' || type === 'tv') {
             // --- Vidnest.fun ---
