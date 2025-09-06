@@ -345,6 +345,7 @@ async function searchResults(keyword) {
         let transformedResults = [];
 
         const keywordGroups = {
+            onePieceFilmRedAmaLeeScore: ["!onePieceFilmRedAmaLeeScore", "/onePieceFilmRedAmaLeeScore", "!onePieceFilmRed", "/onePieceFilmRed", "!opfr", "/opfr"],
             dragonballrecut: ["!dragonballrecut", "/dragonballrecut", "!dbr", "/dbr"],
             dragonballsuperultrainstinctcut: ["!dragonballsuperultrainstinctcut", "/dragonballsuperultrainstinctcut", "!dbsuic", "/dbsuic", "!dbsc", "/dbsc"],
             borucut: ["!borucut", "/borucut", "!boru", "/boru"],
@@ -374,6 +375,26 @@ async function searchResults(keyword) {
         ];
 
         const shouldFilter = !matchesKeyword(keyword, skipTitleFilter);
+
+        // --- One Piece Film Red: AmaLee Score ---
+        if (matchesKeyword(keyword, keywordGroups.onePieceFilmRedAmaLeeScore)) {
+            const results = [];
+
+            results.push({
+                title: "Use External Player",
+                image: "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/onePieceFilmRedAmaLeeScore/UseExternalPlayer.png",
+                href: ""
+            });
+
+            results.push({
+                title: "Film Red AmaLee Score v2",
+                image: "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/onePieceFilmRedAmaLeeScore/icon.png",
+                href: "https://pixeldrain.net/u/5doVw29C"
+            });
+            
+            console.log(`Results: ${JSON.stringify(results)}`);
+            return JSON.stringify(results);
+        }
 
         // --- Dragon Ball Recut ---
         if (matchesKeyword(keyword, keywordGroups.dragonballrecut)) {
@@ -838,7 +859,7 @@ async function extractDetails(url) {
 
             console.log(`Details: ${JSON.stringify(transformedResults)}`);
             return JSON.stringify(transformedResults);
-        } else if (url.includes('https://pixeldrain.com/api/filesystem/') || url.includes('https://archive.org/')) {
+        } else if (url.includes('https://pixeldrain.com/api/filesystem/') || url.includes('https://archive.org/') || url.includes('https://pixeldrain.net/u')) {
             const transformedResults = [{
                 description: '',
                 aliases: '',
@@ -944,6 +965,20 @@ async function extractEpisodes(url) {
                     href: `pixeldrain/${result.id}`,
                     number: index + 1,
                 };
+            });
+
+            console.log(`Episodes: ${JSON.stringify(transformedResults)}`);
+            return JSON.stringify(transformedResults);
+        } else if (url.includes('https://pixeldrain.net/u')) {
+            const match = url.match(/https:\/\/pixeldrain\.net\/u\/([^\/]+)/);
+            if (!match) throw new Error("Invalid URL format");
+                    
+            const id = match[1];
+
+            const transformedResults = [];
+            transformedResults.push({
+                href: `pixeldrain/${id}`,
+                number: 1,
             });
 
             console.log(`Episodes: ${JSON.stringify(transformedResults)}`);
@@ -2047,7 +2082,7 @@ async function extractStreamUrl(url) {
         } else if (type === 'pixeldrain') {
             streams.push({ 
                 title: "PixelDrain", 
-                streamUrl: `https://pixeldrain.net/api/file/${path}?download`, 
+                streamUrl: `https://pixeldrain.net/api/file/${path}`, 
                 headers: {
                     'Referer': 'https://pixeldrain.net/',
                     'Origin': 'https://pixeldrain.net'
