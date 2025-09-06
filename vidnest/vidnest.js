@@ -628,7 +628,7 @@ async function extractStreamUrl(url) {
         const streams2 = await networkFetch("https://vidnest.fun/movie/666243", {
             timeoutSeconds: 10,
             clickSelectors: [".PlayButton_button__7mArI"]
-        });
+        }, ".m3u8");
 
         console.log("Vidnest.fun streams: " + JSON.stringify(streams2));
         console.log("Vidnest.fun streams: " + streams2);
