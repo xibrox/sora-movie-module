@@ -43,7 +43,9 @@ async function searchResults(keyword) {
     for (const item of results) {
         const match = item.href.match(/q=(https[^&]+)/);
         if (match) {
-            item.href = decodeURIComponent(match[1]);
+            let decoded = decodeURIComponent(match[1]);
+            decoded = decoded.replace(/pixeldrain\.com/, "pixeldrain.net");
+            item.href = decoded;
         }
     }
 
@@ -51,8 +53,11 @@ async function searchResults(keyword) {
     return JSON.stringify(results);
 }
 
+// searchResults();
+// extractEpisodes("https://pixeldrain.net/l/hUCyAHnR");
+
 async function extractDetails(url) {
-    const match = url.match(/https:\/\/pixeldrain\.com\/l\/([^\/]+)/);
+    const match = url.match(/https:\/\/pixeldrain\.net\/l\/([^\/]+)/);
     if (!match) throw new Error("Invalid URL format");
 
     const arcId = match[1];
@@ -71,7 +76,7 @@ async function extractDetails(url) {
 }
 
 async function extractEpisodes(url) {
-    const match = url.match(/https:\/\/pixeldrain\.com\/l\/([^\/]+)/);
+    const match = url.match(/https:\/\/pixeldrain\.net\/l\/([^\/]+)/);
     if (!match) throw new Error("Invalid URL format");
 
     const arcId = match[1];

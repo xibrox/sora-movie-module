@@ -1,24 +1,32 @@
-Copyright (c) 2025, xibrox
+License
+
+Copyright (c) 2025, xibrox  
 All rights reserved.
 
-This software module is licensed exclusively for use within the [Sora/Sulfur iOS application](https://github.com/cranci1/Sora), developed by cranc1.  
-Use outside of this context is strictly prohibited.
+This software module is primarily licensed for use within the Sora/Sulfur iOS application(https://github.com/cranci1/Sora), developed by cranc1.  
+It may also be freely used in other projects, provided they meet the criteria outlined below.
 
-## LICENSE TERMS:
+LICENSE TERMS
 
-### 1. Permitted Use:
-- This software may only be used as part of the official Sora or Sulfur iOS applications.
-- Use is restricted to builds distributed or authorized by cranc1.
+1. Permitted Use
+- This software may be used as part of the official Sora or Sulfur iOS applications.  
+- It may also be used in open-source applications that are:  
+  - Free to download and use this software (no paywall, subscription, or purchase required)  
+  - Without advertisements during the usage of this software  
+  - Released under an open-source license  
+- All three of the above requirements are mandatory unless explicit written permission has been granted by the copyright holder to an application that does not meet one or more of them.
 
-### 2. Prohibited Use:
-- Redistribution, reproduction, or sublicensing in any form is not allowed.
-- Use in any other software, product, service, or platform is strictly prohibited.
-- Commercial use is forbidden under all circumstances.
-- Private or personal use outside of the permitted context is not allowed.
+2. Prohibited Use
+- Redistribution, reproduction, or sublicensing of this software as a standalone module is not allowed  
+- Use in proprietary, closed-source, paid, or ad-supported software is strictly prohibited  
+- Commercial use of this software in any form is forbidden  
 
-### 3. Access & Agreement:
-- By accessing, downloading, or using any portion of this repository, you acknowledge and agree to abide by these terms.
-- Unauthorized use or distribution may result in legal action.
+3. Access & Agreement
+- By accessing, downloading, or using any portion of this repository, you acknowledge and agree to abide by these terms  
+- Unauthorized use or distribution may result in legal action  
+
+---
 
 This license does not grant any rights under patent, trademark, or other intellectual property laws beyond those explicitly stated above.  
-### Note: The license terms may change over time. It is your responsibility to review the latest version periodically.
+
+Note: License terms may change over time. It is your responsibility to review the latest version periodically.   

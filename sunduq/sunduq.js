@@ -345,6 +345,13 @@ async function searchResults(keyword) {
         let transformedResults = [];
 
         const keywordGroups = {
+            dragonballrecut: ["!dragonballrecut", "/dragonballrecut", "!dbr", "/dbr"],
+            dragonballsuperultrainstinctcut: ["!dragonballsuperultrainstinctcut", "/dragonballsuperultrainstinctcut", "!dbsuic", "/dbsuic", "!dbsc", "/dbsc"],
+            borucut: ["!borucut", "/borucut", "!boru", "/boru"],
+            yuYuHakushoPace: ["!yuYuHakushoPace", "/yuYuHakushoPace", "!yyhp", "/yyhp", "!yhp", "/yhp"],
+            blackCloverPace: ["!blackCloverPace", "/blackCloverPace", "!bcp", "/bcp"],
+            onePieceTreasureEdition: ["!onePieceTreasureEdition", "/onePieceTreasureEdition", "!opte", "/opte"],
+            onigashima: ["!onigashima", "/onigashima", "!oni", "/oni"],
             concentratedBleach: ["!concentratedBleach", "/concentratedBleach", "!bleach", "/bleach", "!cb", "/cb"],
             narucannon: ["!narucannon", "/narucannon", "!naru", "/naru", "!n", "/n"],
             onepace: ["!onepace", "/onepace", "!one", "/one", "!op", "/op", "!o", "/o"],
@@ -367,6 +374,164 @@ async function searchResults(keyword) {
         ];
 
         const shouldFilter = !matchesKeyword(keyword, skipTitleFilter);
+
+        // --- Dragon Ball Recut ---
+        if (matchesKeyword(keyword, keywordGroups.dragonballrecut)) {
+            const results = [];
+
+            results.push({
+                title: "Dragon Ball Recut",
+                image: "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/dragonballrecut/icon.png",
+                href: "https://archive.org/details/dragon-ball-recut/"
+            });
+            
+            console.log(`Results: ${JSON.stringify(results)}`);
+            return JSON.stringify(results);
+        }
+
+        // --- Dragon Ball Super Ultra Instinct Cut ---
+        if (matchesKeyword(keyword, keywordGroups.dragonballsuperultrainstinctcut)) {
+            const results = [];
+
+            results.push({
+                title: "Dragon Ball Super: Ultra Instinct Cut",
+                image: "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/dragonballsuperultrainstinctcut/icon.png",
+                href: "https://archive.org/details/dragon-ball-super-ultra-instinct-cut/"
+            });
+            
+            console.log(`Results: ${JSON.stringify(results)}`);
+            return JSON.stringify(results);
+        }
+
+        // --- Borucut ---
+        if (matchesKeyword(keyword, keywordGroups.borucut)) {
+            const results = [];
+            const response = await soraFetch(`https://sites.google.com/view/borucut`);
+            const html = await response.text();
+
+            // --- Regex patterns ---
+            const arcRegex = /<span class="C9DxTc "[^>]*>([^<]*Arc)<\/span>/g;
+            const linkRegex = /<a[^>]*href="([^"]+)"[^>]*>\s*<div class="NsaAfc">\s*<p>.*?<\/p>/g;
+            const imageRegex = /<img src="([^"]+)"[^>]*>/g;
+
+            // --- Extract arcs ---
+            let arcs = [];
+            let match;
+            while ((match = arcRegex.exec(html)) !== null) {
+                arcs.push(match[1].trim());
+            }
+
+            // --- Extract links ---
+            let hrefs = [];
+            while ((match = linkRegex.exec(html)) !== null) {
+                hrefs.push(match[1]);
+            }
+
+            // --- Extract ALL images ---
+            let allImages = [];
+            while ((match = imageRegex.exec(html)) !== null) {
+                allImages.push(match[1]);
+            }
+
+            // 🔑 Filter images: keep only the ones that appear after arcs start
+            // In your case, the "real" arc images start from index 4 onward
+            let images = allImages.slice(allImages.length - arcs.length);
+
+            // --- Zip arcs + hrefs + images together ---
+            for (let i = 0; i < arcs.length; i++) {
+                results.push({
+                    title: arcs[i] || "",
+                    href: hrefs[i] || "",
+                    image: images[i] || ""
+                });
+            }
+
+            for (const item of results) {
+                const match = item.href.match(/q=(https[^&]+)/);
+                if (match) {
+                    let decoded = decodeURIComponent(match[1]);
+                    decoded = decoded.replace(/pixeldrain\.com/, "pixeldrain.net");
+                    item.href = decoded;
+                }
+            }
+
+            console.log("Results:", results);
+            return JSON.stringify(results);
+        }
+
+        // --- Yu Yu Hakusho Pace ---
+        if (matchesKeyword(keyword, keywordGroups.yuYuHakushoPace)) {
+            const results = [];
+
+            results.push({
+                title: "Use External Player",
+                image: "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/yuYuHakushoPace/UseExternalPlayer.png",
+                href: ""
+            });
+
+            results.push({
+                title: "Yu Yu Hakusho Pace",
+                image: "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/yuYuHakushoPace/icon.png",
+                href: "https://pixeldrain.net/l/Ldcn42AG"
+            });
+            
+            console.log(`Results: ${JSON.stringify(results)}`);
+            return JSON.stringify(results);
+        }
+
+        // --- Black Clover Pace ---
+        if (matchesKeyword(keyword, keywordGroups.blackCloverPace)) {
+            const results = [];
+
+            results.push({
+                title: "Black Clover Pace [SUB]",
+                image: "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/blackCloverPace/icon.png",
+                href: "https://pixeldrain.net/l/nhfMpi4V"
+            });
+
+            results.push({
+                title: "Black Clover Pace [DUB]",
+                image: "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/blackCloverPace/icon.png",
+                href: "https://pixeldrain.net/l/iryu2NWQ"
+            });
+            
+            console.log(`Results: ${JSON.stringify(results)}`);
+            return JSON.stringify(results);
+        }
+
+        // --- One Piece Treasure Edition ---
+        if (matchesKeyword(keyword, keywordGroups.onePieceTreasureEdition)) {
+            const results = [];
+
+            results.push({
+                title: "Use External Player",
+                image: "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/onePieceTreasureEdition/UseExternalPlayer.png",
+                href: ""
+            });
+
+            results.push({
+                title: "One Piece Treasure Edition",
+                image: "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/onePieceTreasureEdition/icon.png",
+                href: "https://pixeldrain.net/l/VR7e6o5y"
+            });
+            
+            console.log(`Results: ${JSON.stringify(results)}`);
+            return JSON.stringify(results);
+        }
+
+        // --- Onigashima Paced ---
+        if (matchesKeyword(keyword, keywordGroups.onigashima)) {
+            const results = [];
+
+            results.push({
+                title: "Onigashima Paced",
+                image: "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/onigashima/icon.png",
+                href: "https://pixeldrain.net/l/JVMSKn7c"
+            });
+            
+            console.log(`Results: ${JSON.stringify(results)}`);
+            return JSON.stringify(results);
+        }
 
         // --- Concentrated Bleach ---
         if (matchesKeyword(keyword, keywordGroups.concentratedBleach)) {
@@ -673,7 +838,7 @@ async function extractDetails(url) {
 
             console.log(`Details: ${JSON.stringify(transformedResults)}`);
             return JSON.stringify(transformedResults);
-        } else if (url.includes('https://pixeldrain.com/api/filesystem/')) {
+        } else if (url.includes('https://pixeldrain.com/api/filesystem/') || url.includes('https://archive.org/')) {
             const transformedResults = [{
                 description: '',
                 aliases: '',
@@ -797,6 +962,36 @@ async function extractEpisodes(url) {
 
             console.log(`Episodes: ${JSON.stringify(transformedResults)}`);
             return JSON.stringify(transformedResults);
+        } else if (url.includes('https://archive.org/')) {
+            const responseText = await soraFetch(url);
+            const html = await responseText.text();
+
+            const regex = /playlist='(\[.*?\])'/s;
+            const match = html.match(regex);
+
+            const transformedResults = [];
+
+            if (match) {
+                try {
+                    const playlist = JSON.parse(match[1]);
+                    console.log(JSON.stringify(playlist));
+
+                    for (let i = 0; i < playlist.length; i++) {
+                        const episode = playlist[i];
+                        console.log(`Episode ${i + 1}: ${episode.title}`);
+
+                        transformedResults.push({
+                            href: `archive/https://archive.org${episode.sources[0].file}`,
+                            number: i + 1
+                        });
+                    }
+
+                    console.log(JSON.stringify(transformedResults));
+                    return JSON.stringify(transformedResults);
+                } catch (e) {
+                    console.error("JSON parse failed:", e);
+                }
+            }
         } else {
             throw new Error("Invalid URL format");
         }
@@ -827,7 +1022,7 @@ async function extractEpisodes(url) {
 
 async function extractStreamUrl(url) {
     try {
-        const match = url.match(/^(movie|tv|anime|pixeldrain|pixeldrain2)\/([^?#]+)/);
+        const match = url.match(/^(movie|tv|anime|pixeldrain|pixeldrain2|archive)\/([^?#]+)/);
         if (!match) throw new Error('Invalid URL format');
         const [, type, path] = match;
 
@@ -1866,6 +2061,12 @@ async function extractStreamUrl(url) {
                     'Referer': 'https://pixeldrain.com/',
                     'Origin': 'https://pixeldrain.com'
                 }
+            });
+        } else if (type === 'archive') {
+            streams.push({ 
+                title: "Internet Archive", 
+                streamUrl: path, 
+                headers: {}
             });
         }
 

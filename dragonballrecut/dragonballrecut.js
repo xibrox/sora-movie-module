@@ -37,7 +37,7 @@ async function extractDetails(url) {
 
 async function extractEpisodes(url) {
     try {
-        const responseText = await soraFetch(`https://archive.org/details/dragon-ball-recut`);
+        const responseText = await soraFetch(url);
         const html = await responseText.text();
 
         const regex = /playlist='(\[.*?\])'/s;
@@ -55,7 +55,7 @@ async function extractEpisodes(url) {
                     console.log(`Episode ${i + 1}: ${episode.title}`);
 
                     transformedResults.push({
-                        href: `https://archive.org${episode.sources[0].file}|EP${i}`,
+                        href: `https://archive.org${episode.sources[0].file}`,
                         number: i + 1
                     });
                 }
@@ -74,12 +74,12 @@ async function extractEpisodes(url) {
 
 async function extractStreamUrl(url) {
     try {
-        const [streamUrl, episodeNumber] = url.split("|");
+        const streamUrl = url;
 
         const result = {
             streams: [
                 {
-                    title: "Dragon Ball Recut " + episodeNumber,
+                    title: "Dragon Ball Recut",
                     streamUrl,
                     headers: {}
                 }
