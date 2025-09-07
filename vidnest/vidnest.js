@@ -610,7 +610,7 @@ async function extractEpisodes(url) {
 
 // extractDetails("anime/2167");
 // extractEpisodes("anime/2167");
-// extractStreamUrl("anime/130003/1");
+extractStreamUrl("anime/2167/1");
 
 // searchResults("One piece");
 // extractEpisodes("anime/21");
@@ -625,29 +625,22 @@ async function extractStreamUrl(url) {
         let subtitles = "";
 
         // const streams2 = await networkFetch("https://vidnest.fun/movie/666243", 30, {}, ".m3u8");
-        const streams2 = await networkFetch("https://vidnest.fun/movie/666243", {
-            timeoutSeconds: 10,
-            clickSelectors: ["#PlayButton_button__7mArI"],
-            waitForSelectors: ["#PlayButton_button__7mArI"],
-            maxWaitTime: 5
-        });
+        // const streams2 = await networkFetch("https://vidnest.fun/movie/666243", {
+        //     timeoutSeconds: 10,
+        //     clickSelectors: ["#PlayButton_button__7mArI"],
+        //     waitForSelectors: ["#PlayButton_button__7mArI"],
+        //     maxWaitTime: 5
+        // });
 
-        // const streams2 = await networkFetchWithWaitAndClick(
-        //     "https://vidnest.fun/movie/666243",
-        //     [".PlayButton_button__7mArI"],           // Wait for this
-        //     [".PlayButton_button__7mArI"],           // Click this
-        //     { timeoutSeconds: 10 }
-        // );
-
-        console.log("Vidnest.fun streams: " + JSON.stringify(streams2));
-        console.log("Vidnest.fun streams: " + streams2);
+        // console.log("Vidnest.fun streams: " + JSON.stringify(streams2));
+        // console.log("Vidnest.fun streams: " + streams2);
 
         if (type === 'movie' || type === 'tv') {
             // --- Vidnest.fun ---
             // --- Movies and TV shows ---
             const fetchVidnest = async () => {
                 try {
-                    const proxyUrl = `https://proxy.nhdapi.xyz/proxy?url=`;
+                    const proxyUrl = `https://proxy.vidnest.fun/proxy?url=`;
                     const headers = {
                         'Referer': 'https://vidnest.fun/',
                         'Origin': 'https://vidnest.fun'
@@ -656,11 +649,37 @@ async function extractStreamUrl(url) {
                     const [showId, seasonNumber, episodeNumber] =
                         type === "tv" ? path.split("/") : [];
 
-                    // helper to safely fetch JSON
+                    // helper: call AES-decipher API
+                    const callDecipherAPI = async (cipher, aes, iv) => {
+                        try {
+                            const res = await soraFetch("https://aes-decipher.vercel.app/api/decipher", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ cipher, aes, iv }),
+                            });
+
+                            const data = await res.json();
+                            return data.result;
+                        } catch (err) {
+                            return null;
+                        }
+                    };
+
+                    // helper: safe fetch JSON (auto-decrypt if cipher found)
                     const safeFetch = async (url, opts) => {
                         try {
                             const res = await soraFetch(url, opts);
-                            return await res.json();
+                            const json = await res.json();
+
+                            if (json?.cipher) {
+                                return await callDecipherAPI(
+                                    json.cipher,
+                                    "0123456789abcdef", // AES key
+                                    "abcdef0123456789"  // AES IV
+                                );
+                            }
+
+                            return json;
                         } catch (err) {
                             return null;
                         }
@@ -692,11 +711,11 @@ async function extractStreamUrl(url) {
                         flixhqData, 
                         allMoviesData
                     ] = await Promise.allSettled([
-                            safeFetch(endpoints.hollymovie, { headers }),
-                            // safeFetch(endpoints.official, { headers }),
-                            safeFetch(endpoints.flixhq, { headers }),
-                            safeFetch(endpoints.allmovies, { headers })
-                        ]).then(results => results.map(r => r.status === "fulfilled" ? r.value : null));
+                        safeFetch(endpoints.hollymovie, { headers }),
+                        // safeFetch(endpoints.official, { headers }),
+                        safeFetch(endpoints.flixhq, { headers }),
+                        safeFetch(endpoints.allmovies, { headers })
+                    ]).then(results => results.map(r => r.status === "fulfilled" ? r.value : null));
 
                     let streams = [];
 
@@ -808,188 +827,115 @@ async function extractStreamUrl(url) {
             // --- Anime ---
             const fetchVidnestAnime = async () => {
                 try {
-                    if (type === 'anime') {
-                        const [anilistId, episodeNumber] = path.split('/');
+                    if (type !== 'anime') return { streams: [], subtitles: [] };
 
-                        const hosts = [
-                            'zaza', 
-                            'miko', 
-                            'animez', 
-                            'hd-1', 
-                            'hd-2', 
-                            'hd-3', 
-                            'shiro'
-                        ];
-                        const types = ['sub', 'dub'];
+                    const [anilistId, episodeNumber] = path.split('/');
 
-                        const aniwaveHosts = [
-                            'pahe', 
-                            'wave', 
-                            'lofi', 
-                            'miku', 
-                            'koto', 
-                            'yuki',
-                            'zone', 
-                            'strix', 
-                            'anya', 
-                            'akane', 
-                            'kami'
-                        ];
+                    const types = ['sub', 'dub'];
+                    const aniwaveHosts = ['wave', 'anya'];
 
-                        const headers = {
-                            'Referer': 'https://vidnest.fun/',
-                            'Origin': 'https://vidnest.fun'
-                        };
+                    const headers = { Referer: 'https://vidnest.fun/', Origin: 'https://vidnest.fun' };
 
-                        const requests = [];
-                        let subtitleUrls = [];
-                        let subtitleFound = false;
+                    let subtitleUrls = [];
+                    let subtitleFound = false;
 
-                        // --- First loop (main hosts) ---
-                        for (const host of hosts) {
-                            const hostTitle =
-                                host === 'miko' ? 'Aniwave' :
-                                host === 'zaza' ? 'Animepahe' :
-                                host === 'shiro' ? 'AniZone' :
-                                host === 'animez' ? 'AnimeZ' :
-                                'Zoro';
-
-                            for (const type of types) {
-                                if (type === 'dub' && host === 'animez') continue;
-                                const url = `https://backend.xaiby.sbs/sources?id=${anilistId}&ep=${episodeNumber}&host=${host}&type=${type}`;
-                                requests.push(
-                                    soraFetch(url, { headers })
-                                        .then(res => res.json())
-                                        .then(data => {
-                                            if (!data?.sources?.url) return null;
-
-                                            let subs = [];
-
-                                            if (!subtitleFound) {
-                                                if (data.sources?.subtitles && Array.isArray(data.sources?.subtitles)) {
-                                                    subs = data.sources.subtitles;
-                                                } else if (data.sources?.tracks && Array.isArray(data.sources?.tracks)) {
-                                                    subs = data.sources.tracks;
-                                                } else if (Array.isArray(data.subtitles)) {
-                                                    subs = data.subtitles;
-                                                }
-
-                                                // English .vtt
-                                                const found = subs.find(s =>
-                                                    typeof (s.url || s.file) === "string" &&
-                                                    /\.vtt$/i.test(s.url || s.file) &&
-                                                    !/thumbnails\.vtt$/i.test(s.url || s.file) &&
-                                                    (s.lang || s.label || "").toLowerCase().includes("english")
-                                                );
-
-                                                if (found) {
-                                                    subtitleUrls = found.url || found.file;
-                                                    subtitleFound = true;
-                                                }
-                                            }
-
-                                            const proxyUrl = `https://proxy.nhdapi.xyz/proxy?url=`;
-                                            const streamUrl = host === 'miko' ? data.sources.url
-                                                : host === "animez" ? data.sources.url
-                                                : host === "zaza" ? data.sources.url
-                                                : `${proxyUrl}${encodeURIComponent(data.sources.url)}`;
-
-                                            return {
-                                                title: `${hostTitle} - ${host.toUpperCase()} - ${type.toUpperCase()}`,
-                                                streamUrl,
-                                                headers: { Referer: data.sources?.headers?.Referer || 'https://vidnest.fun/' }
-                                            };
-                                        })
-                                        .catch(() => null)
-                                );
-                            }
+                    // --- Helper: call AES-decipher API ---
+                    const callDecipherAPI = async (cipher, aes, iv) => {
+                        try {
+                            const res = await soraFetch('https://aes-decipher.vercel.app/api/decipher', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ cipher, aes, iv })
+                            });
+                            const data = await res.json();
+                            return data.result;
+                        } catch {
+                            return null;
                         }
+                    };
 
-                        // --- Second loop (aniwave hosts) ---
-                        for (const host of aniwaveHosts) {
-                            const hostTitle =
-                                host === 'lofi' ? 'Strmup' :
-                                host === 'anya' ? 'MegaCloud' :
-                                host === 'akane' ? 'MegaPlay' :
-                                host === 'koto' ? 'MegaPlay' :
-                                host === 'miku' ? 'MegaCloud' :
-                                host === 'zone' ? 'AniZone' :
-                                host === 'kami' ? 'KickAssAnime' :
-                                host === 'pahe' ? 'Animepahe' :
-                                host === 'strix' ? 'AniXL' :
-                                host === 'wave' ? 'Aniwave' :
-                                host;
+                    // --- Helper: fetch and auto-decrypt if cipher exists ---
+                    const safeFetch = async (url) => {
+                        try {
+                            const res = await soraFetch(url, { headers });
+                            const json = await res.json();
 
-                            for (const type of types) {
-                                const url = `https://backend.vidnest.fun/aniwave/${anilistId}/${episodeNumber}/${type}/${host}`;
-
-                                console.log("Fetching: " + url);
-                                requests.push(
-                                    soraFetch(url, { headers })
-                                        .then(res => res.json())
-                                        .then(data => {
-                                            if (!data?.streams[0]?.url) return null;
-
-                                            let subs = [];
-
-                                            if (!subtitleFound) {
-                                                if (data.sources?.subtitles && Array.isArray(data.sources?.subtitles)) {
-                                                    if (!data.sources.subtitles.includes("1oe.lostproject.club")) {
-                                                        subs = data.sources.subtitles;
-                                                    }
-                                                } else if (data.sources?.tracks && Array.isArray(data.sources?.tracks)) {
-                                                    if (!data.sources.tracks.includes("1oe.lostproject.club")) {
-                                                        subs = data.sources.tracks;
-                                                    }
-                                                } else if (Array.isArray(data.subtitles)) {
-                                                    if (!data.subtitles.includes("1oe.lostproject.club")) {
-                                                        subs = data.subtitles;
-                                                    }
-                                                }
-
-                                                // English .vtt
-                                                const found = subs.find(s =>
-                                                    typeof (s.url || s.file) === "string" &&
-                                                    /\.vtt$/i.test(s.url || s.file) &&
-                                                    !/thumbnails\.vtt$/i.test(s.url || s.file) &&
-                                                    (s.lang || s.label || "").toLowerCase().includes("english")
-                                                );
-
-                                                if (found) {
-                                                    subtitleUrls = found.url || found.file;
-                                                    subtitleFound = true;
-                                                }
-                                            }
-
-                                            // const subs = data.streams[0]?.subtitles || data.subtitles || [];
-                                            const proxyUrl = `https://proxy.nhdapi.xyz/proxy?url=`;
-                                            const streamUrl = host === 'wave' ? data.streams[0].url
-                                                : host === 'lofi' ? data.streams[0].url
-                                                : host === 'pahe' ? data.streams[0].url
-                                                : host === 'miku' ? data.streams[0].url
-                                                : `${proxyUrl}${encodeURIComponent(data.streams[0].url)}`;
-
-                                            const stream = {
-                                                title: `(Aniwave) ${hostTitle} - ${host.toUpperCase()} - ${type.toUpperCase()}`,
-                                                streamUrl: streamUrl,
-                                                headers: data.streams[0]?.headers
-                                            };
-
-                                            console.log("Aniwave stream fetched: " + stream);
-                                            return stream;
-                                        })
-                                        .catch(() => null)
-                                );
+                            if (json?.cipher) {
+                                return await callDecipherAPI(json.cipher, '0123456789abcdef', 'abcdef0123456789');
                             }
+
+                            return json;
+                        } catch {
+                            return null;
                         }
+                    };
 
-                        const results = await Promise.all(requests);
+                    const requests = [];
 
-                        return {
-                            streams: results.filter(Boolean),
-                            subtitles: subtitleUrls
-                        };
+                    // --- Loop over aniwave hosts ---
+                    for (const host of aniwaveHosts) {
+                        const hostTitle =
+                            // host === 'lofi' ? 'Strmup' :
+                            host === 'anya' ? 'MegaPlay' :
+                            // host === 'akane' ? 'MegaPlay' :
+                            // host === 'koto' ? 'MegaPlay' :
+                            // host === 'miku' ? 'MegaCloud' :
+                            // host === 'zone' ? 'AniZone' :
+                            // host === 'kami' ? 'KickAssAnime' :
+                            // host === 'pahe' ? 'Animepahe' :
+                            // host === 'strix' ? 'AniXL' :
+                            host === 'wave' ? 'Aniwave' :
+                            host;
+
+                        for (const t of types) {
+                            const url = `https://backend.vidnest.fun/aniwave/${anilistId}/${episodeNumber}/${t}/${host}`;
+                            console.log("Fetching: " + url);
+
+                            requests.push(
+                                safeFetch(url).then(data => {
+                                    if (!data?.streams?.[0]?.url) return null;
+
+                                    // Handle subtitles
+                                    if (!subtitleFound) {
+                                        let subs = data.sources?.subtitles || data.sources?.tracks || data.subtitles || [];
+                                        const found = subs.find(s =>
+                                            typeof (s.url || s.file) === 'string' &&
+                                            /\.vtt$/i.test(s.url || s.file) &&
+                                            !/thumbnails\.vtt$/i.test(s.url || s.file) &&
+                                            (s.lang || s.label || '').toLowerCase().includes('english')
+                                        );
+                                        if (found) {
+                                            subtitleUrls = found.url || found.file;
+                                            subtitleFound = true;
+                                        }
+                                    }
+
+                                    const proxyUrl = `https://proxy.vidnest.fun/proxy?url=`;
+                                    // const streamUrl = ['wave','lofi','pahe','miku'].includes(host)
+                                    //     ? data.streams[0].url
+                                    //     : `${proxyUrl}${encodeURIComponent(data.streams[0].url)}`;
+
+                                    const streamUrl = ['wave'].includes(host)
+                                        ? data.streams[0].url
+                                        : `${proxyUrl}${encodeURIComponent(data.streams[0].url)}`;
+
+                                    return {
+                                        title: `${hostTitle} - ${host.toUpperCase()} - ${t.toUpperCase()}`,
+                                        streamUrl,
+                                        headers: data.streams[0]?.headers
+                                    };
+                                }).catch(() => null)
+                            );
+                        }
                     }
+
+                    const results = await Promise.all(requests);
+
+                    return {
+                        streams: results.filter(Boolean),
+                        subtitles: subtitleUrls
+                    };
+
                 } catch (e) {
                     console.log("Vidnest Anime stream extraction failed silently:", e);
                     return { streams: [], subtitles: [] };
