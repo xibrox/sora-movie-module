@@ -630,7 +630,7 @@ async function extractStreamUrl(url) {
             clickSelectors: [".PlayButton_button__7mArI"],
             waitForSelectors: [".PlayButton_button__7mArI"],
             maxWaitTime: 5
-        }, ".m3u8");
+        });
 
         console.log("Vidnest.fun streams: " + JSON.stringify(streams2));
         console.log("Vidnest.fun streams: " + streams2);
