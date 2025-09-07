@@ -625,12 +625,19 @@ async function extractStreamUrl(url) {
         let subtitles = "";
 
         // const streams2 = await networkFetch("https://vidnest.fun/movie/666243", 30, {}, ".m3u8");
-        const streams2 = await networkFetch("https://vidnest.fun/movie/666243", {
-            timeoutSeconds: 10,
-            clickSelectors: [".PlayButton_button__7mArI"],
-            waitForSelectors: [".PlayButton_button__7mArI"],
-            maxWaitTime: 5
-        });
+        // const streams2 = await networkFetch("https://vidnest.fun/movie/666243", {
+        //     timeoutSeconds: 10,
+        //     clickSelectors: [".PlayButton_button__7mArI"],
+        //     waitForSelectors: [".PlayButton_button__7mArI"],
+        //     maxWaitTime: 5
+        // });
+
+        const streams2 = await networkFetchWithWaitAndClick(
+            "https://vidnest.fun/movie/666243",
+            [".PlayButton_button__7mArI"],           // Wait for this
+            [".PlayButton_button__7mArI"],           // Click this
+            { timeoutSeconds: 10 }
+        );
 
         console.log("Vidnest.fun streams: " + JSON.stringify(streams2));
         console.log("Vidnest.fun streams: " + streams2);
