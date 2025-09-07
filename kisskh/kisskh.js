@@ -1,8 +1,8 @@
 async function searchResults(keyword) {
     try {
         const encodedKeyword = encodeURIComponent(keyword);
-        const responseText = await fetch(`https://kisskh.co/api/DramaList/Search?q=${encodedKeyword}&type=0`);
-        const data = JSON.parse(responseText);
+        const responseText = await soraFetch(`https://kisskh.co/api/DramaList/Search?q=${encodedKeyword}&type=0`);
+        const data = await responseText.json();
 
         const transformedResults = data.map(result => {
             const editedTitle = result.title.replace(/[\s()']/g, '-');
@@ -27,13 +27,13 @@ async function extractDetails(url) {
         if (!match) throw new Error("Invalid URL format");
 
         const showId = match[2];
-        const responseText = await fetch(`https://kisskh.co/api/DramaList/Drama/${showId}?isq=false`);
-        const data = JSON.parse(responseText);
+        const responseText = await soraFetch(`https://kisskh.co/api/DramaList/Drama/${showId}?isq=false`);
+        const data = await responseText.json();
 
         const transformedResults = [{
             description: data.description || 'No description available',
             // Movies use runtime (in minutes)
-            aliases: `Duration: ${data.runtime ? data.runtime + " minutes" : 'Unknown'}`,
+            aliases: ``,
             airdate: `Released: ${data.releaseDate ? data.releaseDate : 'Unknown'}`
         }];
 
@@ -52,13 +52,14 @@ async function extractEpisodes(url) {
     try {
         const match = url.match(/https:\/\/kisskh\.co\/Drama\/([^\/]+)\?id=([^\/]+)/);
         if (!match) throw new Error("Invalid URL format");
+        const showTitle = match[1];
         const showId = match[2];
-        
-        const showResponseText = await fetch(`https://kisskh.co/api/DramaList/Drama/${showId}?isq=false`);
-        const showData = JSON.parse(showResponseText);
+
+        const showResponseText = await soraFetch(`https://kisskh.co/api/DramaList/Drama/${showId}?isq=false`);
+        const showData = await showResponseText.json();
 
         const episodes = showData.episodes?.map(episode => ({
-            href: `https://kisskh.co/Drama/True-Beauty/Episode-${episode.number}?id=${showId}&ep=${episode.id}`,
+            href: `https://kisskh.co/Drama/${showTitle}/Episode-${episode.number}?id=${showId}&ep=${episode.id}`,
             number: episode.number,
             title: episode.name || `Episode ${episode.number}` ||  ""
         }));
@@ -76,38 +77,56 @@ async function extractEpisodes(url) {
 
 async function extractStreamUrl(url) {
     try {
-        const match = url.match(/https:\/\/kisskh\.co\/Drama\/([^\/]+)\/Episode-([^\/]+)\?id=([^\/]+)\&ep=([^\/]+)/);
-        if (!match) throw new Error("Invalid URL format");
+        const streams = await networkFetch(url, 30, {}, ".m3u8");
+        const subtitles2 = await networkFetch(url, 30, {}, ".srt");
 
-        const showTitle = match[1];
-        const episodeNumber = match[2];
-        const showId = match[3];
+        console.log("Vidnest.fun streams: " + JSON.stringify(streams));
+        console.log("Vidnest.fun streams: " + streams.requests.find(url => url.includes('.m3u8')));
 
-        const streamUrls = [
-            `https://hls12.kisskh.cloud/hls12/${showTitle}.Ep${episodeNumber}/index.m3u8`,
-            `https://hls12.kisskh.cloud/hls12/${showTitle}-Ep${episodeNumber}/index.m3u8`,
-            `https://hls.streamsub.top/hls07/${showId}/Ep${episodeNumber}_index.m3u8`,
-            `https://hls03.loadfast.site/${showTitle}Ep${episodeNumber}.m3u8`,
-            `https://hls03.videodelivery.top/${showId}/${showTitle}.Ep${episodeNumber}.mp4`,
-            `https://videodelivery.top/${showTitle}.Ep${episodeNumber}.mp4`,
-            `https://hls12.kisskh.cloud/hls12/${showTitle}-episode-${episodeNumber}.v0/index.m3u8`,
-            `https://hls03.loadfast.site/${showTitle}Ep${episodeNumber}.m3u8`,
-        ];
+        console.log("Vidnest.fun subtitles: " + JSON.stringify(subtitles2));
+        console.log("Vidnest.fun subtitles: " + subtitles2.requests.find(url => url.includes('.srt')));
 
-        try {
-            const result = {
-                stream: `https://hls.streamsub.top/hls07/${showId}/Ep${episodeNumber}_index.m3u8`,
-                subtitles: `https://sub.streamsub.top/${showTitle}.Ep${episodeNumber}.en.srt` ||  "",
-            };
+        if (streams.requests && streams.requests.length > 0) {
+            const streamUrl = streams.requests.find(url => url.includes('.m3u8')) || "";
+            const subtitles = subtitles2.requests.find(url => url.includes('.srt')) || "";
 
-            console.log(result);
-            
-            return JSON.stringify(result);
-        } catch (err) {
-            console.log(`Fetch error on endpoint https://hls.streamsub.top/hls07/${showId}/Ep${episodeNumber}_index.m3u8 for show ${showId}:`, err);
+            const results = {
+                streams: [{
+                    title: "Stream",
+                    streamUrl,
+                    headers: {
+                        "Referer": "https://kisskh.co/",
+                        "Origin": "https://kisskh.co"
+                    },
+                }],
+                subtitles
+            }
+
+            return JSON.stringify(results);
+        } else {
+            return "";
         }
     } catch (error) {
         console.log('Fetch error in extractStreamUrl:', error);
         return null;
+    }
+}
+
+async function soraFetch(url, options = { headers: {}, method: 'GET', body: null, encoding: 'utf-8' }) {
+    try {
+        return await fetchv2(
+            url,
+            options.headers ?? {},
+            options.method ?? 'GET',
+            options.body ?? null,
+            true,
+            options.encoding ?? 'utf-8'
+        );
+    } catch(e) {
+        try {
+            return await fetch(url, options);
+        } catch(error) {
+            return null;
+        }
     }
 }

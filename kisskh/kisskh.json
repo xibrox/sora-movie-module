@@ -1,19 +1,20 @@
 {
-    "sourceName": "KissKH (BROKEN)",
+    "sourceName": "KissKH",
     "iconUrl": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/kisskh/icon.png",
     "author": {
         "name": "ibro",
         "icon": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/profile.jpg",
         "url": "https://github.com/xibrox"
     },
-    "version": "1.0.4",
-    "language": "Korean",
+    "version": "1.0.5",
+    "language": "Korean/English",
     "streamType": "HLS",
     "quality": "1080p",
     "baseUrl": "https://kisskh.co/",
     "searchBaseUrl": "https://kisskh.co/api/DramaList/Search?q=%s&type=0",
     "scriptUrl": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/kisskh/kisskh.js",
-    "type": "shows/movies",
+    "type": "anime/shows/movies",
+    "downloadSupport": true,
     "asyncJS": true,
     "softsub": true
 }

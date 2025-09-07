@@ -624,17 +624,6 @@ async function extractStreamUrl(url) {
         let streams = [];
         let subtitles = "";
 
-        // const streams2 = await networkFetch("https://vidnest.fun/movie/666243", 30, {}, ".m3u8");
-        // const streams2 = await networkFetch("https://vidnest.fun/movie/666243", {
-        //     timeoutSeconds: 10,
-        //     clickSelectors: ["#PlayButton_button__7mArI"],
-        //     waitForSelectors: ["#PlayButton_button__7mArI"],
-        //     maxWaitTime: 5
-        // });
-
-        // console.log("Vidnest.fun streams: " + JSON.stringify(streams2));
-        // console.log("Vidnest.fun streams: " + streams2);
-
         if (type === 'movie' || type === 'tv') {
             // --- Vidnest.fun ---
             // --- Movies and TV shows ---
