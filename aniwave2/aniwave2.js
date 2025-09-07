@@ -460,6 +460,7 @@ async function extractEpisodes(url) {
 
 // searchResults("One piece");
 // extractEpisodes("anime/21");
+// extractStreamUrl("anime/21/1");
 
 async function extractStreamUrl(url) {
     try {
@@ -471,108 +472,107 @@ async function extractStreamUrl(url) {
         let subtitles = "";
 
         // --- AniWave ---
-        const fetchAniwave = async () => {
-            try {
-                if (type === 'anime') {
-                    const [anilistId, episodeNumber] = path.split('/');
+		const fetchAniwave = async () => {
+			if (type !== 'anime') return { streams: [], subtitles: "" };
 
-                    const headers = {
-                        "Referer": "https://aniwave.at/"
-                    };
+			const [anilistId, episodeNumber] = path.split('/');
+			const headers = { Referer: "https://aniwave.at/" };
 
-                    const response = await soraFetch(`https://aniwave.at/api/anime/episodes?id=${anilistId}`, { headers });
-                    const data = await response.json();
+			// --- get all providers ---
+			const response = await soraFetch(`https://aniwave.at/api/anime/episodes?id=${anilistId}`, { headers });
+			const data = await response.json();
 
-                    let providers = [];
+			const providers = [];
+			for (const episode of data.episodes) {
+				for (const ep of episode.episodes) {
+					if (ep.number === Number(episodeNumber)) {
+						providers.push({ providerId: episode.providerId, id: ep.id, hasDub: ep.hasDub });
+						break;
+					}
+				}
+			}
 
-                    for (const episode of data.episodes) {
-                        for (const ep of episode.episodes) {
-                            if (ep.number === Number(episodeNumber)) {
-                                providers.push({
-                                    providerId: episode.providerId,
-                                    id: ep.id,
-                                    hasDub: ep.hasDub
-                                });
-                                break;
-                            }
-                        }
-                    }
+			let subtitleUrls = "";
+			const streams = [];
 
-                    let streams = [];
-                    let subtitles = "";
+			// --- fetch all sources in parallel ---
+			await Promise.all(providers.map(async (pro) => {
+				const providerId = pro.providerId;
+				if (providerId === "zone") return;
 
-                    for (const pro of providers) {
-                        const providerId = pro.providerId;
+				const hostTitle = {
+					lofi: 'Strmup', anya: 'MegaCloud', akane: 'MegaPlay', koto: 'MegaPlay', 
+					miku: 'MegaCloud', kami: 'KickAssAnime', pahe: 'Animepahe', strix: 'AniXL',
+					wave: 'Aniwave'
+				}[providerId] || providerId;
 
-                        if (providerId === "akane" || providerId === "strix" || providerId === "zone") continue;
+				const subtypes = ['sub'];
+				if (pro.hasDub) subtypes.push('dub'); // fetch dub if available
 
-                        const hostTitle =
-                            providerId === 'lofi' ? 'Strmup' :
-                            providerId === 'anya' ? 'MegaCloud' :
-                            providerId === 'akane' ? 'MegaPlay' :
-                            providerId === 'koto' ? 'MegaPlay' :
-                            providerId === 'miku' ? 'MegaCloud' :
-                            providerId === 'zone' ? 'AniZone' :
-                            providerId === 'kami' ? 'KickAssAnime' :
-                            providerId === 'pahe' ? 'Animepahe' :
-                            providerId === 'strix' ? 'AniXL' :
-                            providerId === 'wave' ? 'Aniwave' :
-                            providerId;
+				// --- temporary array to sort sub/dub ---
+				const providerStreams = [];
 
-                        const responseSource = await soraFetch(
-                            `https://aniwave.at/api/anime/sources?id=${anilistId}&provider=${providerId}&epId=${pro.id}&epNum=${episodeNumber}&subType=sub&cache=true`,
-                            { headers }
-                        );
+				await Promise.all(subtypes.map(async (t) => {
+					try {
+						const resSource = await soraFetch(
+							`https://aniwave.at/api/anime/sources?id=${anilistId}&provider=${providerId}&epId=${pro.id}&epNum=${episodeNumber}&subType=${t}&cache=true`,
+							{ headers }
+						);
+						const { data: source } = await resSource.json();
 
-                        const sourceData = await responseSource.json();
-                        const source = sourceData.data;
+						// --- decrypt ---
+						const passphrase = "itsalrightbroiknowyouwantsourcesifyoucamethiswayyoudeserveit";
+						const decrypted = CryptoJS.AES.decrypt(source, passphrase);
+						const parsed = JSON.parse(decrypted.toString(CryptoJS.enc.Utf8));
 
-                        const passphrase = "itsalrightbroiknowyouwantsourcesifyoucamethiswayyoudeserveit";
-                        CryptoJS.lib.WordArray.random = function() {
-                            return { words: [], sigBytes: 0 };
-                        };
+						if (Array.isArray(parsed.sources)) {
+							parsed.sources.forEach(src => {
+								if (src.isM3U8 === false) return;
 
-                        const decrypted = CryptoJS.AES.decrypt(
-                            source, 
-                            passphrase
-                        );
+								let streamUrl = src.url;
+								if (providerId === 'akane') streamUrl = `https://decorsify.aniwave.news/?url=${streamUrl}`;
+								else if (providerId === 'strix') streamUrl = `https://cdn.aniwave.at/proxy?url=${btoa(streamUrl)}&headers=${btoa(parsed.headers)}`;
+								else if (providerId === 'kami') streamUrl = `https://cors.aniwave.news/?url=${streamUrl}`;
 
-                        const parsed = JSON.parse(decrypted.toString(CryptoJS.enc.Utf8));
-                        console.log(parsed);
+								let typeLabel = t.toUpperCase();
+								if (t === 'sub' && ['pahe','wave','strix'].includes(providerId)) typeLabel = 'HARDSUB';
 
-                        if (Array.isArray(parsed.sources)) {
-                            streams.push(
-                                ...parsed.sources
-                                    .filter(src => src.isM3U8 !== false)
-                                    .map(src => ({
-                                        title: `${hostTitle} - ${providerId.toUpperCase()}`,
-                                        streamUrl: `${src.url}`,
-                                        headers: parsed.headers || {}
-                                    }))
-                            );
-                        }
+								providerStreams.push({ title: `${hostTitle} - ${providerId.toUpperCase()} - ${typeLabel}`, streamUrl, headers: parsed.headers || {}, type: t, isHardSub: typeLabel === 'HARDSUB' });
+							});
+						}
 
-                        if (Array.isArray(parsed.subtitles)) {
-                            const found = parsed.subtitles.find(s =>
-                                typeof (s.url || s.file) === "string" &&
-                                /\.vtt$/i.test(s.url || s.file) &&
-                                !/thumbnails\.vtt$/i.test(s.url || s.file) &&
-                                (s.lang || s.label || "").toLowerCase().includes("english")
-                            );
-                            if (found) {
-                                subtitles = found.url || found.file;
-                            }
-                        }
-                    }
+						// --- add subtitles if not set ---
+						if (!subtitleUrls && Array.isArray(parsed.subtitles)) {
+							const found = parsed.subtitles.find(s =>
+								typeof (s.url || s.file) === "string" &&
+								/\.vtt$/i.test(s.url || s.file) &&
+								!/thumbnails\.vtt$/i.test(s.url || s.file) &&
+								(s.lang || s.label || "").toLowerCase().includes("english")
+							);
+							if (found) subtitleUrls = found.url || found.file;
+						}
 
-                    return { streams, subtitles };
-                }
-                return { streams: [], subtitles: "" };
-            } catch (e) {
-                console.log("AniWave stream extraction failed silently: " + e);
-                return { streams: [], subtitles: "" };
-            }
-        };
+					} catch (e) {
+						console.log(`Failed provider ${providerId} subtype ${t}:`, e);
+					}
+				}));
+
+				// --- sort HARDSUB first, then sub, then dub ---
+				providerStreams.sort((a, b) => {
+					if (a.isHardSub && !b.isHardSub) return -1;
+					if (!a.isHardSub && b.isHardSub) return 1;
+					if (a.type === b.type) return 0;
+					if (a.type === 'sub') return -1;
+					if (b.type === 'sub') return 1;
+					return 0; // dub last
+				});
+
+				// push sorted streams to main array
+				streams.push(...providerStreams);
+			}));
+
+			return { streams, subtitles: subtitleUrls };
+		};
 
         // Run all fetches in parallel
         const [
