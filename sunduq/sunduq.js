@@ -1900,248 +1900,250 @@ async function extractStreamUrl(url) {
                 return { streams, subtitles: subtitleUrls };
             };
 
-            // --- Vidnest.fun ---
-            // --- Anime ---
-            const fetchVidnestAnime = async () => {
-                try {
-                    if (type !== 'anime') return { streams: [], subtitles: [] };
+            // // --- Vidnest.fun ---
+            // // --- Anime ---
+            // const fetchVidnestAnime = async () => {
+            //     try {
+            //         if (type !== 'anime') return { streams: [], subtitles: [] };
 
-                    const [anilistId, episodeNumber] = path.split('/');
+            //         const [anilistId, episodeNumber] = path.split('/');
 
-                    const types = ['sub', 'dub'];
-                    const aniwaveHosts = ['wave', 'anya'];
+            //         const types = ['sub', 'dub'];
+            //         const aniwaveHosts = ['wave', 'anya'];
 
-                    const headers = { Referer: 'https://vidnest.fun/', Origin: 'https://vidnest.fun' };
+            //         const headers = { Referer: 'https://vidnest.fun/', Origin: 'https://vidnest.fun' };
 
-                    let subtitleUrls = [];
-                    let subtitleFound = false;
+            //         let subtitleUrls = [];
+            //         let subtitleFound = false;
 
-                    // --- Helper: call AES-decipher API ---
-                    const callDecipherAPI = async (cipher, aes, iv) => {
-                        try {
-                            const res = await soraFetch('https://aes-decipher.vercel.app/api/decipher', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ cipher, aes, iv })
-                            });
-                            const data = await res.json();
-                            return data.result;
-                        } catch {
-                            return null;
-                        }
-                    };
+            //         // --- Helper: call AES-decipher API ---
+            //         const callDecipherAPI = async (cipher, aes, iv) => {
+            //             try {
+            //                 const res = await soraFetch('https://aes-decipher.vercel.app/api/decipher', {
+            //                     method: 'POST',
+            //                     headers: { 'Content-Type': 'application/json' },
+            //                     body: JSON.stringify({ cipher, aes, iv })
+            //                 });
+            //                 const data = await res.json();
+            //                 return data.result;
+            //             } catch {
+            //                 return null;
+            //             }
+            //         };
 
-                    // --- Helper: fetch and auto-decrypt if cipher exists ---
-                    const safeFetch = async (url) => {
-                        try {
-                            const res = await soraFetch(url, { headers });
-                            const json = await res.json();
+            //         // --- Helper: fetch and auto-decrypt if cipher exists ---
+            //         const safeFetch = async (url) => {
+            //             try {
+            //                 const res = await soraFetch(url, { headers });
+            //                 const json = await res.json();
 
-                            if (json?.cipher) {
-                                return await callDecipherAPI(json.cipher, '0123456789abcdef', 'abcdef0123456789');
-                            }
+            //                 if (json?.cipher) {
+            //                     return await callDecipherAPI(json.cipher, '0123456789abcdef', 'abcdef0123456789');
+            //                 }
 
-                            return json;
-                        } catch {
-                            return null;
-                        }
-                    };
+            //                 return json;
+            //             } catch {
+            //                 return null;
+            //             }
+            //         };
 
-                    const requests = [];
+            //         const requests = [];
 
-                    // --- Loop over aniwave hosts ---
-                    for (const host of aniwaveHosts) {
-                        const hostTitle =
-                            // host === 'lofi' ? 'Strmup' :
-                            host === 'anya' ? 'MegaPlay' :
-                            // host === 'akane' ? 'MegaPlay' :
-                            // host === 'koto' ? 'MegaPlay' :
-                            // host === 'miku' ? 'MegaCloud' :
-                            // host === 'zone' ? 'AniZone' :
-                            // host === 'kami' ? 'KickAssAnime' :
-                            // host === 'pahe' ? 'Animepahe' :
-                            // host === 'strix' ? 'AniXL' :
-                            host === 'wave' ? 'Aniwave' :
-                            host;
+            //         // --- Loop over aniwave hosts ---
+            //         for (const host of aniwaveHosts) {
+            //             const hostTitle =
+            //                 // host === 'lofi' ? 'Strmup' :
+            //                 host === 'anya' ? 'MegaPlay' :
+            //                 // host === 'akane' ? 'MegaPlay' :
+            //                 // host === 'koto' ? 'MegaPlay' :
+            //                 // host === 'miku' ? 'MegaCloud' :
+            //                 // host === 'zone' ? 'AniZone' :
+            //                 // host === 'kami' ? 'KickAssAnime' :
+            //                 // host === 'pahe' ? 'Animepahe' :
+            //                 // host === 'strix' ? 'AniXL' :
+            //                 host === 'wave' ? 'Aniwave' :
+            //                 host;
 
-                        for (const t of types) {
-                            const url = `https://backend.vidnest.fun/aniwave/${anilistId}/${episodeNumber}/${t}/${host}`;
-                            console.log("Fetching: " + url);
+            //             for (const t of types) {
+            //                 const url = `https://backend.vidnest.fun/aniwave/${anilistId}/${episodeNumber}/${t}/${host}`;
+            //                 console.log("Fetching: " + url);
 
-                            requests.push(
-                                safeFetch(url).then(data => {
-                                    if (!data?.streams?.[0]?.url) return null;
+            //                 requests.push(
+            //                     safeFetch(url).then(data => {
+            //                         if (!data?.streams?.[0]?.url) return null;
 
-                                    // Handle subtitles
-                                    if (!subtitleFound) {
-                                        let subs = data.sources?.subtitles || data.sources?.tracks || data.subtitles || [];
-                                        const found = subs.find(s =>
-                                            typeof (s.url || s.file) === 'string' &&
-                                            /\.vtt$/i.test(s.url || s.file) &&
-                                            !/thumbnails\.vtt$/i.test(s.url || s.file) &&
-                                            (s.lang || s.label || '').toLowerCase().includes('english')
-                                        );
-                                        if (found) {
-                                            subtitleUrls = found.url || found.file;
-                                            subtitleFound = true;
-                                        }
-                                    }
+            //                         // Handle subtitles
+            //                         if (!subtitleFound) {
+            //                             let subs = data.sources?.subtitles || data.sources?.tracks || data.subtitles || [];
+            //                             const found = subs.find(s =>
+            //                                 typeof (s.url || s.file) === 'string' &&
+            //                                 /\.vtt$/i.test(s.url || s.file) &&
+            //                                 !/thumbnails\.vtt$/i.test(s.url || s.file) &&
+            //                                 (s.lang || s.label || '').toLowerCase().includes('english')
+            //                             );
+            //                             if (found) {
+            //                                 subtitleUrls = found.url || found.file;
+            //                                 subtitleFound = true;
+            //                             }
+            //                         }
 
-                                    const proxyUrl = `https://proxy.vidnest.fun/proxy?url=`;
-                                    // const streamUrl = ['wave','lofi','pahe','miku'].includes(host)
-                                    //     ? data.streams[0].url
-                                    //     : `${proxyUrl}${encodeURIComponent(data.streams[0].url)}`;
+            //                         const proxyUrl = `https://proxy.vidnest.fun/proxy?url=`;
+            //                         // const streamUrl = ['wave','lofi','pahe','miku'].includes(host)
+            //                         //     ? data.streams[0].url
+            //                         //     : `${proxyUrl}${encodeURIComponent(data.streams[0].url)}`;
 
-                                    const streamUrl = ['wave'].includes(host)
-                                        ? data.streams[0].url
-                                        : `${proxyUrl}${encodeURIComponent(data.streams[0].url)}`;
+            //                         const streamUrl = ['wave'].includes(host)
+            //                             ? data.streams[0].url
+            //                             : `${proxyUrl}${encodeURIComponent(data.streams[0].url)}`;
 
-                                    return {
-                                        title: `(Vidnest) ${hostTitle} - ${host.toUpperCase()} - ${t.toUpperCase()}`,
-                                        streamUrl,
-                                        headers: data.streams[0]?.headers
-                                    };
-                                }).catch(() => null)
-                            );
-                        }
-                    }
+            //                         return {
+            //                             title: `(Vidnest) ${hostTitle} - ${host.toUpperCase()} - ${t.toUpperCase()}`,
+            //                             streamUrl,
+            //                             headers: data.streams[0]?.headers
+            //                         };
+            //                     }).catch(() => null)
+            //                 );
+            //             }
+            //         }
 
-                    const results = await Promise.all(requests);
+            //         const results = await Promise.all(requests);
 
-                    return {
-                        streams: results.filter(Boolean),
-                        subtitles: subtitleUrls
-                    };
+            //         return {
+            //             streams: results.filter(Boolean),
+            //             subtitles: subtitleUrls
+            //         };
 
-                } catch (e) {
-                    console.log("Vidnest Anime stream extraction failed silently:", e);
-                    return { streams: [], subtitles: [] };
-                }
-            };
+            //     } catch (e) {
+            //         console.log("Vidnest Anime stream extraction failed silently:", e);
+            //         return { streams: [], subtitles: [] };
+            //     }
+            // };
 
-            // --- Lunar Anime ---
-            // --- Anime ---
-            const fetchLunarAnime = async () => {
-                try {
-                    if (type === 'anime') {
-                        const [anilistId, episodeNumber] = path.split('/');
-                        const types = ['sub', 'dub'];
+            // // --- Lunar Anime ---
+            // // --- Anime ---
+            // const fetchLunarAnime = async () => {
+            //     try {
+            //         if (type === 'anime') {
+            //             const [anilistId, episodeNumber] = path.split('/');
+            //             const types = ['sub', 'dub'];
 
-                        const apiUrl = `https://2ndprovider.lunaranime.ru/vermillion/episodes?id=${anilistId}`;
-                        const response = await soraFetch(apiUrl);
-                        const data = await response.json();
+            //             const apiUrl = `https://2ndprovider.lunaranime.ru/vermillion/episodes?id=${anilistId}`;
+            //             const response = await soraFetch(apiUrl);
+            //             const data = await response.json();
 
-                        const sources = data.data.episodes;
+            //             const sources = data.data.episodes;
 
-                        let requests = [];
-                        let subtitleUrl = "";
+            //             let requests = [];
+            //             let subtitleUrl = "";
 
-                        for (const source of sources) {
-                            const providerId = source.providerId;
+            //             for (const source of sources) {
+            //                 const providerId = source.providerId;
 
-                            const hostTitle = 
-                                providerId === 'miku' ? 'MegaCloud' : 
-                                providerId === 'anya' ? 'MegaCloud' : 
-                                providerId === 'lofi' ? 'StreamUP' : 
-                                providerId === 'wave' ? 'Aniwave' : 
-                                providerId === 'pahe' ? 'Animepahe' : 
-                                providerId === 'kami' ? 'KickAssAnime' :
-                                providerId === 'zone' ? 'AniZone' :
-                                null;
+            //                 const hostTitle = 
+            //                     providerId === 'miku' ? 'MegaCloud' : 
+            //                     providerId === 'anya' ? 'MegaCloud' : 
+            //                     providerId === 'lofi' ? 'StreamUP' : 
+            //                     providerId === 'wave' ? 'Aniwave' : 
+            //                     providerId === 'pahe' ? 'Animepahe' : 
+            //                     providerId === 'kami' ? 'KickAssAnime' :
+            //                     providerId === 'zone' ? 'AniZone' :
+            //                     null;
 
-                            if (providerId === "yuki" || providerId === "zone" || providerId === "akane" || providerId === "strix" || providerId === "kami") {
-                                continue;
-                            }
+            //                 if (providerId === "yuki" || providerId === "zone" || providerId === "akane" || providerId === "strix" || providerId === "kami") {
+            //                     continue;
+            //                 }
 
-                            const episode = source.episodes.find(e => e.number === Number(episodeNumber));
+            //                 const episode = source.episodes.find(e => e.number === Number(episodeNumber));
 
-                            if (!episode) {
-                                console.warn(`Episode ${episodeNumber} not found for provider ${providerId}`);
-                                continue;
-                            }
+            //                 if (!episode) {
+            //                     console.warn(`Episode ${episodeNumber} not found for provider ${providerId}`);
+            //                     continue;
+            //                 }
 
-                            const buildRequest = (subType) => {
-                                const streamProviderUrl = `https://2ndprovider.lunaranime.ru/vermillion/sources?id=${anilistId}&provider=${providerId}&epId=${episode.id}&epNum=${episode.number}&subType=${subType}`;
-                                return soraFetch(streamProviderUrl)
-                                    .then(res => res.json())
-                                    .then(data => {
-                                        if (!data?.data?.sources) return null;
+            //                 const buildRequest = (subType) => {
+            //                     const streamProviderUrl = `https://2ndprovider.lunaranime.ru/vermillion/sources?id=${anilistId}&provider=${providerId}&epId=${episode.id}&epNum=${episode.number}&subType=${subType}`;
+            //                     return soraFetch(streamProviderUrl)
+            //                         .then(res => res.json())
+            //                         .then(data => {
+            //                             if (!data?.data?.sources) return null;
 
-                                        // collect subs
-                                        let subs = [];
-                                        if (Array.isArray(data.data.subtitles)) {
-                                            subs = data.data.subtitles;
-                                        } else if (Array.isArray(data.data.tracks)) {
-                                            subs = data.data.tracks;
-                                        }
+            //                             // collect subs
+            //                             let subs = [];
+            //                             if (Array.isArray(data.data.subtitles)) {
+            //                                 subs = data.data.subtitles;
+            //                             } else if (Array.isArray(data.data.tracks)) {
+            //                                 subs = data.data.tracks;
+            //                             }
 
-                                        const found = subs.find(s =>
-                                            typeof (s.url || s.file) === "string" &&
-                                            /\.vtt$/i.test(s.url || s.file) &&
-                                            !/thumbnails\.vtt$/i.test(s.url || s.file) &&
-                                            (s.lang || s.label || "").toLowerCase().includes("english")
-                                        );
+            //                             const found = subs.find(s =>
+            //                                 typeof (s.url || s.file) === "string" &&
+            //                                 /\.vtt$/i.test(s.url || s.file) &&
+            //                                 !/thumbnails\.vtt$/i.test(s.url || s.file) &&
+            //                                 (s.lang || s.label || "").toLowerCase().includes("english")
+            //                             );
 
-                                        if (found) {
-                                            subtitleUrl = found.url || found.file;
-                                        }
+            //                             if (found) {
+            //                                 subtitleUrl = found.url || found.file;
+            //                             }
 
-                                        return data.data.sources
-                                            .filter(src => src.isM3U8 !== false)
-                                            .map(src => ({
-                                                title: `(LUNAR) ${hostTitle ? `- ${hostTitle} - ` : ""}${providerId.toUpperCase()} - ${subType.toUpperCase()}${src.quality ? ` - ${src.quality}` : ""}`,
-                                                streamUrl: `https://cluster.lunaranime.ru/api/proxy/hls/custom?url=${src.url}${data.data.headers ? `&referer=${data.data.headers?.Referer}` : ''}`,
-                                                headers: data.data.headers || {}
-                                            }));
-                                    })
-                                    .catch(() => null);
-                            };
+            //                             return data.data.sources
+            //                                 .filter(src => src.isM3U8 !== false)
+            //                                 .map(src => ({
+            //                                     title: `(LUNAR) ${hostTitle ? `- ${hostTitle} - ` : ""}${providerId.toUpperCase()} - ${subType.toUpperCase()}${src.quality ? ` - ${src.quality}` : ""}`,
+            //                                     streamUrl: `https://cluster.lunaranime.ru/api/proxy/hls/custom?url=${src.url}${data.data.headers ? `&referer=${data.data.headers?.Referer}` : ''}`,
+            //                                     headers: data.data.headers || {}
+            //                                 }));
+            //                         })
+            //                         .catch(() => null);
+            //                 };
 
-                            if (episode.hasDub) {
-                                for (const t of types) {
-                                    requests.push(buildRequest(t));
-                                }
-                            } else {
-                                requests.push(buildRequest("sub"));
-                            }
-                        }
+            //                 if (episode.hasDub) {
+            //                     for (const t of types) {
+            //                         requests.push(buildRequest(t));
+            //                     }
+            //                 } else {
+            //                     requests.push(buildRequest("sub"));
+            //                 }
+            //             }
 
-                        const results = await Promise.all(requests);
-                        return {
-                            streams: results.flat().filter(Boolean),
-                            subtitles: subtitleUrl
-                        };
-                    }
-                    return { streams: [], subtitles: "" };
-                } catch (e) {
-                    console.log("Lunar Anime stream extraction failed silently:", e);
-                    return { streams: [], subtitles: "" };
-                }
-            };
+            //             const results = await Promise.all(requests);
+            //             return {
+            //                 streams: results.flat().filter(Boolean),
+            //                 subtitles: subtitleUrl
+            //             };
+            //         }
+            //         return { streams: [], subtitles: "" };
+            //     } catch (e) {
+            //         console.log("Lunar Anime stream extraction failed silently:", e);
+            //         return { streams: [], subtitles: "" };
+            //     }
+            // };
 
             // Run all fetches in parallel
             const [
                 otakuuResult,
-                vidnestAnimeResult,
-                lunarAnimeResult,
+                // vidnestAnimeResult,
+                // lunarAnimeResult,
             ] = await Promise.allSettled([
                 fetchOtakuu(),
-                fetchVidnestAnime(),
-                fetchLunarAnime(),
+                // fetchVidnestAnime(),
+                // fetchLunarAnime(),
             ]).then(results => results.map(r => r.status === 'fulfilled' ? r.value : (Array.isArray(r.value) ? [] : "")));
 
             // Collect streams from all sources
             streams.push(...((otakuuResult?.streams) || []));
-            streams.push(...((vidnestAnimeResult?.streams) || []));
-            streams.push(...((lunarAnimeResult?.streams) || []));
+            // streams.push(...((vidnestAnimeResult?.streams) || []));
+            // streams.push(...((lunarAnimeResult?.streams) || []));
 
             if (otakuuResult?.subtitles?.length && otakuuResult?.subtitles) {
                 subtitles = otakuuResult.subtitles;
-            } else if (lunarAnimeResult?.subtitles?.length && lunarAnimeResult?.subtitles) {
-                subtitles = lunarAnimeResult.subtitles;
-            } else if (vidnestAnimeResult?.subtitles?.length && vidnestAnimeResult?.subtitles) {
-                subtitles = vidnestAnimeResult.subtitles;
-            }
+            } 
+            // else if (lunarAnimeResult?.subtitles?.length && lunarAnimeResult?.subtitles) {
+            //     subtitles = lunarAnimeResult.subtitles;
+            // } 
+            // else if (vidnestAnimeResult?.subtitles?.length && vidnestAnimeResult?.subtitles) {
+            //     subtitles = vidnestAnimeResult.subtitles;
+            // }
         } else if (type === 'pixeldrain') {
             streams.push({ 
                 title: "PixelDrain", 
