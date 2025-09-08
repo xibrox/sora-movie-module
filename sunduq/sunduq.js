@@ -1863,7 +1863,7 @@ async function extractStreamUrl(url) {
                                     let typeLabel = t.toUpperCase();
                                     if (t === 'sub' && ['pahe','wave','strix'].includes(providerId)) typeLabel = 'HARDSUB';
 
-                                    providerStreams.push({ title: `(Otakuu) ${hostTitle} - ${providerId.toUpperCase()} - ${typeLabel}`, streamUrl, headers: parsed.headers || {}, type: t, isHardSub: typeLabel === 'HARDSUB' });
+                                    providerStreams.push({ title: `${hostTitle} - ${providerId.toUpperCase()} - ${typeLabel}`, streamUrl, headers: parsed.headers || {}, type: t, isHardSub: typeLabel === 'HARDSUB' });
                                 });
                             }
 
