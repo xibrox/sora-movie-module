@@ -1,0 +1,20 @@
+{
+    "sourceName": "Aniwave (SCRAPER)",
+    "iconUrl": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/aniwave2/icon.png",
+    "author": {
+        "name": "ibro",
+        "icon": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/profile.jpg",
+        "url": "https://github.com/xibrox"
+    },
+    "version": "1.0.3",
+    "language": "English",
+    "streamType": "HLS",
+    "quality": "1080p",
+    "baseUrl": "https://aniwave.at/",
+    "searchBaseUrl": "https://aniwave.at/catalog?search=%s",
+    "scriptUrl": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/aniwave2/aniwave2.js",
+    "type": "anime",
+    "downloadSupport": true,
+    "asyncJS": true,
+    "softsub": true
+}
