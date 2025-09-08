@@ -471,15 +471,15 @@ async function extractStreamUrl(url) {
         let streams = [];
         let subtitles = "";
 
-        // --- AniWave ---
-		const fetchAniwave = async () => {
+        // --- Otakuu ---
+		const fetchOtakuu = async () => {
 			if (type !== 'anime') return { streams: [], subtitles: "" };
 
 			const [anilistId, episodeNumber] = path.split('/');
-			const headers = { Referer: "https://aniwave.at/" };
+			const headers = { Referer: "https://otakuu.se/" };
 
 			// --- get all providers ---
-			const response = await soraFetch(`https://aniwave.at/api/anime/episodes?id=${anilistId}`, { headers });
+			const response = await soraFetch(`https://otakuu.se/api/anime/episodes?id=${anilistId}`, { headers });
 			const data = await response.json();
 
 			const providers = [];
@@ -515,13 +515,15 @@ async function extractStreamUrl(url) {
 				await Promise.all(subtypes.map(async (t) => {
 					try {
 						const resSource = await soraFetch(
-							`https://aniwave.at/api/anime/sources?id=${anilistId}&provider=${providerId}&epId=${pro.id}&epNum=${episodeNumber}&subType=${t}&cache=true`,
+							`https://otakuu.se/api/anime/sources?id=${anilistId}&provider=${providerId}&epId=${pro.id}&epNum=${episodeNumber}&subType=${t}&cache=true`,
 							{ headers }
 						);
 						const { data: source } = await resSource.json();
 
+						console.log(`Otakuu ${providerId} ${t} source: ` + source);
+
 						// --- decrypt ---
-						const passphrase = "itsalrightbroiknowyouwantsourcesifyoucamethiswayyoudeserveit";
+						const passphrase = "C/1e3ktkt(c.y,i.y,j,this.setTarget.y,s.y,?n.originYvoid.aWZ5b3VuZWVkdGhlc291cmNlc3dpdGhvdXR0aGlzaGVhZGFjaGVqdXN0cmVhY2htZW91dHd0Zg==";
 						const decrypted = CryptoJS.AES.decrypt(source, passphrase);
 						const parsed = JSON.parse(decrypted.toString(CryptoJS.enc.Utf8));
 
@@ -531,7 +533,7 @@ async function extractStreamUrl(url) {
 
 								let streamUrl = src.url;
 								if (providerId === 'akane') streamUrl = `https://decorsify.aniwave.news/?url=${streamUrl}`;
-								else if (providerId === 'strix') streamUrl = `https://cdn.aniwave.at/proxy?url=${btoa(streamUrl)}&headers=${btoa(parsed.headers)}`;
+								else if (providerId === 'strix') streamUrl = `https://cdn.otakuu.se/proxy?url=${btoa(streamUrl)}&headers=${btoa(parsed.headers)}`;
 								else if (providerId === 'kami') streamUrl = `https://cors.aniwave.news/?url=${streamUrl}`;
 
 								let typeLabel = t.toUpperCase();
@@ -576,16 +578,16 @@ async function extractStreamUrl(url) {
 
         // Run all fetches in parallel
         const [
-            aniwaveResult
+            otakuuResult
         ] = await Promise.allSettled([
-            fetchAniwave()
+            fetchOtakuu()
         ]).then(results => results.map(r => r.status === 'fulfilled' ? r.value : { streams: [], subtitles: "" }));
 
         // Collect streams from all sources
-        streams.push(...((aniwaveResult?.streams) || []));
+        streams.push(...((otakuuResult?.streams) || []));
 
-        if (aniwaveResult?.subtitles) {
-            subtitles = aniwaveResult.subtitles;
+        if (otakuuResult?.subtitles) {
+            subtitles = otakuuResult.subtitles;
         }
 
         const result = { streams, subtitles };
