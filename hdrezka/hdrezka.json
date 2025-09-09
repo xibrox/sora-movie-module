@@ -1,0 +1,20 @@
+{
+    "sourceName": "HDRezka",
+    "iconUrl": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/hdrezka/icon.png",
+    "author": {
+        "name": "ibro",
+        "icon": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/profile.jpg",
+        "url": "https://github.com/xibrox"
+    },
+    "version": "1.0.0",
+    "language": "Russian",
+    "streamType": "HLS",
+    "quality": "1080p",
+    "baseUrl": "https://rezka.ag/",
+    "searchBaseUrl": "https://rezka.ag/search/?do=search&subaction=search&q=%s",
+    "scriptUrl": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/hdrezka/hdrezka.js",
+    "type": "anime/movies/shows",
+    "downloadSupport": false,
+    "asyncJS": true,
+    "softsub": true
+}

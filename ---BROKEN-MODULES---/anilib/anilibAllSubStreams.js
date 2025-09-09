@@ -576,7 +576,7 @@ async function extractStreamUrl(url) {
 async function searchResults(keyword) {
     try {
         const encodedKeyword = encodeURIComponent(keyword);
-        const apiUrl = `https://api2.mangalib.me/api/anime?q=${encodedKeyword}`;
+        const apiUrl = `https://api2.mangalib.org/api/anime?q=${encodedKeyword}`;
 
         const responseText = await ddosGuard.fetchWithBypass(apiUrl, {
             headers: {
@@ -590,7 +590,7 @@ async function searchResults(keyword) {
             return {
                 title: result.rus_name || result.eng_name || result.name,
                 image: result.cover.default,
-                href: `https://anilib.me/ru/anime/${result.slug_url}`
+                href: `https://anilib.org/ru/anime/${result.slug_url}`
             };
         });
 
