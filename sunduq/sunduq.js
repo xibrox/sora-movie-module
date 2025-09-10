@@ -1065,6 +1065,118 @@ async function extractStreamUrl(url) {
         let subtitles = "";
 
         if (type === 'movie' || type === 'tv') {
+			// --- Vidlink fetch ---
+			const fetchVidlink = async () => {
+				try {
+					// grab first /api/b/ request
+					const streams = await networkFetch(`https://vidlink.pro/${url}`, 7, {}, "/api/b/");
+
+					if (!streams.requests || streams.requests.length === 0) return [];
+
+					const apiUrl = streams.requests.find(u => u.includes("/api/b/")) || "";
+					if (!apiUrl) {
+						console.log("Vidlink API URL not found");
+						return [];
+					}
+
+					const response = await soraFetch(apiUrl);
+					const data = await response.json();
+
+					if (!data || !data.stream || !data.stream.playlist) return [];
+
+					const streamUrl = data.stream.playlist;
+					const subs = data.stream.captions?.find(track => track.language.includes("English"))?.url || "";
+
+					const vidlinkStreams = [{
+						title: "Vidlink",
+						streamUrl,
+						headers: {
+							Referer: "https://vidlink.pro/",
+							Origin: "https://vidlink.pro"
+						}
+					}];
+
+					// return in same array format as other fetchers
+					// return vidlinkStreams.length ? vidlinkStreams : [];
+
+					return { 
+						streams: vidlinkStreams.length ? vidlinkStreams : [], 
+						subtitles: subs 
+					};
+				} catch (err) {
+					console.log("Vidlink failed silently:", err);
+					return [];
+				}
+			};
+
+			// --- Vidsrc fetch ---
+			const fetchVidsrc = async () => {
+				try {
+					// grab first "servers" request
+					const serverList = await networkFetch(`https://vidsrc.cc/v2/embed/${url}`, 7, {}, "servers");
+
+					if (!serverList.requests || serverList.requests.length === 0) {
+						console.log("Vidsrc servers not found");
+						return { streams: [], subtitles: "" };
+					}
+
+					const apiUrl = serverList.requests.find(u => u.includes("servers")) || "";
+					if (!apiUrl) {
+						console.log("Vidsrc API URL not found");
+						return { streams: [], subtitles: "" };
+					}
+
+					const response = await soraFetch(apiUrl);
+					const data = await response.json();
+
+					if (!data || !data.data) {
+						console.log("Invalid Vidsrc server response");
+						return { streams: [], subtitles: "" };
+					}
+
+					// Collect servers
+					const servers = data.data.map(server => ({
+						name: server.name,
+						hash: server.hash
+					}));
+
+					let streams = [];
+					let subtitles = "";
+
+					for (const server of servers) {
+						if (server.name === "UpCloud") continue;
+
+						const responseText = await soraFetch(`https://vidsrc.cc/api/source/${server.hash}`);
+						const source = await responseText.json();
+
+						const streamUrl = source.data?.source;
+						const subsTrack = source.data?.subtitles?.find(
+							track => track.label.includes("English") && track.kind === "captions"
+						)?.file;
+
+						if (streamUrl) {
+							streams.push({
+								title: `VidSrc.cc - ${server.name}`,
+								streamUrl,
+								headers: {
+									Referer: "https://vidsrc.cc/",
+									Origin: "https://vidsrc.cc"
+								}
+							});
+						}
+
+						if (!subtitles && subsTrack) {
+							subtitles = subsTrack;
+						}
+					}
+
+					return { streams, subtitles };
+				} catch (err) {
+					console.log("Vidsrc failed silently:", err);
+					return { streams: [], subtitles: "" };
+				}
+			};
+
             // --- Vidnest.fun ---
             // --- Movies and TV shows ---
             const fetchVidnest = async () => {
@@ -1760,6 +1872,8 @@ async function extractStreamUrl(url) {
 
             // Run all fetches in parallel
             const [
+				vidlinkStreams,
+				vidsrcStreams,
                 vidnestStreams,
                 vidzeeStreams,
                 xprimeStreams,
@@ -1770,6 +1884,8 @@ async function extractStreamUrl(url) {
                 cloudStreamProStreams,
                 subtitleUrl
             ] = await Promise.allSettled([
+				fetchVidlink(),
+				fetchVidsrc(),
                 fetchVidnest(),
                 fetchVidzee(),
                 fetchXPrime(),
@@ -1782,6 +1898,8 @@ async function extractStreamUrl(url) {
             ]).then(results => results.map(r => r.status === 'fulfilled' ? r.value : (Array.isArray(r.value) ? [] : "")));
 
             // Collect streams from all sources
+			streams.push(...(vidlinkStreams?.streams || []));
+			streams.push(...(vidsrcStreams?.streams || []));
             streams.push(...(vidnestStreams || []));
             streams.push(...(vidzeeStreams || []));
             streams.push(...(xprimeStreams || []));
@@ -1791,7 +1909,11 @@ async function extractStreamUrl(url) {
             streams.push(...(vidrockStreams || []));
             streams.push(...(cloudStreamProStreams || []));
 
-            if (subtitleUrl) {
+			if (vidlinkStreams?.subtitles) {
+				subtitles = vidlinkStreams.subtitles;
+			} else if (vidsrcStreams?.subtitles) {
+				subtitles = vidsrcStreams.subtitles;
+            } else if (subtitleUrl) {
                 subtitles = subtitleUrl;
             }
         } else if (type === 'anime') {
