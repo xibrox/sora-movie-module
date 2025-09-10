@@ -1977,7 +1977,14 @@ async function extractStreamUrl(url) {
                                 parsed.sources.forEach(src => {
                                     if (src.isM3U8 === false) return;
 
-                                    let streamUrl = src.url;
+									let streamUrl = "";
+
+									if (providerId === 'pahe') {
+										streamUrl = src.url.replace('/stream/', '/hls/').replace('uwu.m3u8', 'owo.m3u8');
+									} else {
+										streamUrl = src.url;
+									}
+									
                                     if (providerId === 'akane') streamUrl = `https://decorsify.aniwave.news/?url=${streamUrl}`;
                                     else if (providerId === 'strix') streamUrl = `https://cdn.aniwave.at/proxy?url=${btoa(streamUrl)}&headers=${btoa(parsed.headers)}`;
                                     else if (providerId === 'kami') streamUrl = `https://cors.aniwave.news/?url=${streamUrl}`;
