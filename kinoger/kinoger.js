@@ -219,7 +219,7 @@ async function extractStreamUrl(url) {
 
     const streams = await networkFetch(urlYeah, 7, {}, ".m3u8");
 
-    console.log("Vidlink streams: " + JSON.stringify(streams));
+    console.log("Kinoger streams: " + JSON.stringify(streams));
 
     if (streams.requests && streams.requests.length > 0) {
         const streamUrl = streams.requests.find(url => url.includes('.m3u8')) || "";
@@ -229,7 +229,7 @@ async function extractStreamUrl(url) {
 
         // const streamUrl = matches[2] || "";
 
-        console.log("Vidlink streamUrl: " + streamUrl);
+        console.log("Kinoger streamUrl: " + streamUrl);
 
         const results = {
             streams: [{
