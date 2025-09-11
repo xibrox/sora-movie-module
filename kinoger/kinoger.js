@@ -1,3 +1,29 @@
+// async function searchResults(keyword) {
+//     const url = `https://kinoger.com/?do=search&subaction=search&story=${keyword}`;
+//     const response = await soraFetch(url);
+//     const html = await response.text();
+
+//     let results = [];
+
+//     const filmListRegex = /<div class="titlecontrol">[\s\S]*?<a href="([^"]+)"[^>]*>([^<]+)<\/a>[\s\S]*?<div class="content_text searchresult_img">[\s\S]*?<img src="([^"]+)"/g;
+
+//     let match;
+//     while ((match = filmListRegex.exec(html)) !== null) {
+//         const href = match[1].startsWith('http') ? match[1] : `https://kinoger.com${match[1]}`;
+//         const title = match[2].trim();
+//         const image = match[3].startsWith('http') ? match[3] : `https://kinoger.com${match[3]}`;
+
+//         results.push({
+//             title,
+//             image,
+//             href,
+//         });
+//     }
+
+//     console.log(JSON.stringify(results));
+//     return JSON.stringify(results);
+// }
+
 async function searchResults(keyword) {
     const url = `https://kinoger.com/?do=search&subaction=search&story=${encodeURIComponent(keyword)}`;
     const response = await soraFetch(url);

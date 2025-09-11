@@ -1749,20 +1749,28 @@ async function extractStreamUrl(url) {
                 try {
                     let vidrockUrl;
 
-                    if (type === 'movie') {
-                        // Do nothing
-                        vidrockUrl = `https://vidrock.net/api/movie/${path}`;
-                    } else if (type === 'tv') {
-                        // TV format: episode-season-reversedShowId
-                        const [showId, seasonNumber, episodeNumber] = path.split('/');
-                        const transformed = `${episodeNumber}-${seasonNumber}-${showId.split("").reverse().join("")}`;
-                        const encodedOnce = btoa(unescape(encodeURIComponent(transformed)));
-                        const encodedTwice = btoa(encodedOnce);
+                    const apiUrl = await networkFetch(`https://vidrock.net/${url}`, 7, {}, "https://vidrock.net/api");
 
-                        vidrockUrl = `https://vidrock.net/api/tv/${encodedTwice}`;
-                    } else {
-                        return null;
-                    }
+                    console.log("VidRock streams: " + JSON.stringify(apiUrl));
+
+                    vidrockUrl = apiUrl.requests.find(url => url.includes('https://vidrock.net/api')) || "";
+
+                    console.log("API URL: " + vidrockUrl);
+
+                    // if (type === 'movie') {
+                    //     // Do nothing
+                    //     vidrockUrl = `https://vidrock.net/api/movie/${path}`;
+                    // } else if (type === 'tv') {
+                    //     // TV format: episode-season-reversedShowId
+                    //     const [showId, seasonNumber, episodeNumber] = path.split('/');
+                    //     const transformed = `${episodeNumber}-${seasonNumber}-${showId.split("").reverse().join("")}`;
+                    //     const encodedOnce = btoa(unescape(encodeURIComponent(transformed)));
+                    //     const encodedTwice = btoa(encodedOnce);
+
+                    //     vidrockUrl = `https://vidrock.net/api/tv/${encodedTwice}`;
+                    // } else {
+                    //     return null;
+                    // }
 
                     const headers = {
                         'Referer': 'https://vidrock.net/',
